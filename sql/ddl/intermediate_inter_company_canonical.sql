@@ -5,7 +5,7 @@
 -- ============================================================================
 -- Purpose: Physical table definition for inter_company_canonical
 -- Dependencies: workspace.silver.silver_jobs_current
--- Consumers: workspace.warehouse.dim_company
+-- Consumers: workspace.gold.dim_company
 -- Expected Output: Table created with 6 columns
 -- ============================================================================
 

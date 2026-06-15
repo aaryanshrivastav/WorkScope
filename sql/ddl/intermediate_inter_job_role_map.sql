@@ -5,7 +5,7 @@
 -- ============================================================================
 -- Purpose: Physical table definition for inter_job_role_map
 -- Dependencies: workspace.silver.silver_jobs_current
--- Consumers: workspace.warehouse.dim_role
+-- Consumers: workspace.gold.dim_role
 -- Expected Output: Table created with 8 columns
 -- ============================================================================
 

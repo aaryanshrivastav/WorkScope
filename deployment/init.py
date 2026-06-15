@@ -86,22 +86,36 @@ class LMIPInitializer:
         "intermediate_inter_sector_map.sql",
         "intermediate_inter_skill_catalog.sql",
         
-        # Gold/Warehouse dimensions
-        "warehouse_dim_date.sql",
-        "warehouse_dim_company.sql",
-        "warehouse_dim_company_alias.sql",
-        "warehouse_dim_role.sql",
-        "warehouse_dim_sector.sql",
-        "warehouse_dim_skill.sql",
-        "warehouse_dim_job_scd2.sql",
+        # Gold layer dimensions
+        "gold_dim_date.sql",
+        "gold_dim_company.sql",
+        "gold_dim_company_alias.sql",
+        "gold_dim_role.sql",
+        "gold_dim_sector.sql",
+        "gold_dim_skill.sql",
+        "gold_dim_job.sql",
+        "gold_dim_location.sql",
+        "gold_dim_source.sql",
         
-        # Gold/Warehouse bridges and facts
-        "warehouse_bridge_job_skill.sql",
-        "warehouse_fact_job_daily_snapshot.sql",
+        # Gold layer bridges and facts
+        "gold_bridge_job_skill.sql",
+        "gold_fact_job_postings.sql",
+        "gold_fact_job_lifecycle.sql",
+        "gold_fact_salary.sql",
+        "gold_fact_pipeline_runs.sql",
         
-        # Gold layer aggregates
-        "gold_gold_job_kpis_daily.sql",
-        "gold_role_review_queue.sql",
+        # Reporting layer (aggregates and KPIs)
+        "reporting_role_review_queue.sql",
+        "reporting_skill_demand.sql",
+        "reporting_skill_demand_by_sector.sql",
+        "reporting_company_activity.sql",
+        "reporting_company_hiring.sql",
+        "reporting_hiring_activity.sql",
+        "reporting_hiring_trends.sql",
+        "reporting_location_trends.sql",
+        "reporting_salary_trends.sql",
+        "reporting_sector_overview.sql",
+        "reporting_pipeline_health.sql",
         
         # Publish layer
         "publish_publish_manifest.sql",

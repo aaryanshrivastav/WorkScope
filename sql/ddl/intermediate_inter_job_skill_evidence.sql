@@ -5,7 +5,7 @@
 -- ============================================================================
 -- Purpose: Physical table definition for inter_job_skill_evidence
 -- Dependencies: workspace.silver.silver_skill_mapping
--- Consumers: workspace.warehouse.bridge_job_skill
+-- Consumers: workspace.gold.bridge_job_skill
 -- Expected Output: Table created with 9 columns
 -- ============================================================================
 

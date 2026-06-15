@@ -17,10 +17,10 @@
   "max_concurrent_runs": 1,
   "tasks": [
     {
-      "task_key": "Semantic_Role_Map",
+      "task_key": "Intermediate_Role_Map",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/inter_role_map",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_role_map",
         "base_parameters": {
           "confidence_threshold": "0.7",
           "enable_llm_fallback": "false"
@@ -34,10 +34,10 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Semantic_Company_Canonicalize",
+      "task_key": "Intermediate_Company_Canonicalize",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/inter_company_canonicalize",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_company_canonicalize",
         "base_parameters": {
           "fuzzy_threshold": "0.85"
         },
@@ -50,18 +50,18 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Semantic_Sector_Normalize",
+      "task_key": "Intermediate_Sector_Normalize",
       "depends_on": [
         {
-          "task_key": "Semantic_Role_Map"
+          "task_key": "Intermediate_Role_Map"
         },
         {
-          "task_key": "Semantic_Company_Canonicalize"
+          "task_key": "Intermediate_Company_Canonicalize"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/inter_sector_normalize",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_sector_normalize",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -70,15 +70,15 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Semantic_Skill_Catalog_Sync",
+      "task_key": "Intermediate_Skill_Catalog_Sync",
       "depends_on": [
         {
-          "task_key": "Semantic_Sector_Normalize"
+          "task_key": "Intermediate_Sector_Normalize"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/inter_skill_catalog_sync",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_skill_catalog_sync",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -87,15 +87,15 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Semantic_Skill_Graph_Build",
+      "task_key": "Intermediate_Skill_Graph_Build",
       "depends_on": [
         {
-          "task_key": "Semantic_Skill_Catalog_Sync"
+          "task_key": "Intermediate_Skill_Catalog_Sync"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/inter_skill_graph_build",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_skill_graph_build",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
@@ -107,7 +107,7 @@
       "task_key": "Log_Pipeline_Execution",
       "depends_on": [
         {
-          "task_key": "Semantic_Skill_Graph_Build"
+          "task_key": "Intermediate_Skill_Graph_Build"
         }
       ],
       "run_if": "ALL_DONE",
@@ -134,7 +134,7 @@
       "task_key": "Notify_On_Failure",
       "depends_on": [
         {
-          "task_key": "Semantic_Skill_Graph_Build"
+          "task_key": "Intermediate_Skill_Graph_Build"
         }
       ],
       "run_if": "AT_LEAST_ONE_FAILED",

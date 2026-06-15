@@ -109,7 +109,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/inter_role_map",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_role_map",
         "base_parameters": {
           "reprocess_mode": "true",
           "confidence_threshold": "0.6"
@@ -130,7 +130,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/warehouse/wh_dim_job_scd2",
+        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_job_scd2",
         "base_parameters": {
           "full_refresh": "true"
         },

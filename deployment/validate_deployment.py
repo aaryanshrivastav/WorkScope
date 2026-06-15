@@ -59,7 +59,9 @@ class DeploymentValidator:
             self.config.gold_schema,
             self.config.reporting_schema,
             self.config.metadata_schema,
-            self.config.audit_schema
+            self.config.audit_schema,
+            self.config.quarantine_schema,
+            self.config.publish_schema
         ]
         
         results = []

@@ -5,7 +5,7 @@
 -- ============================================================================
 -- Purpose: Physical table definition for inter_sector_map
 -- Dependencies: None (source table)
--- Consumers: workspace.warehouse.dim_sector
+-- Consumers: workspace.gold.dim_sector
 -- Expected Output: Table created with 5 columns
 -- ============================================================================
 

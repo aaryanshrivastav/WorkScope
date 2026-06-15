@@ -527,7 +527,7 @@ class TestManifestContractValidation:
             "fields": [
                 {"name": "job_id", "type": "string"},
                 {"name": "title", "type": "string"},
-                {"name": "company", "string"},
+                {"name": "company", "type": "string"},
                 {"name": "salary", "type": "int"}  # Optional field
             ]
         }

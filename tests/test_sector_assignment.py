@@ -467,16 +467,21 @@ class TestEndToEnd:
         # Simulate sector assignment for each job
         results = []
         for row in df.collect():
-            text = f"{row.title} {row.description}".lower()
+            title_lower = row.title.lower()
+            description_lower = row.description.lower()
             
-            # Find best matching sector
+            # Find best matching sector with weighted scoring
+            # Title keywords weighted 2x, description keywords weighted 1x
             best_sector = -1
             best_score = 0
             
             for sector_id, keywords in sample_sector_keywords.items():
                 if sector_id == -1:
                     continue
-                score = sum(1 for kw in keywords if kw in text)
+                # Weight title matches higher than description matches
+                title_score = sum(2 for kw in keywords if kw in title_lower)
+                description_score = sum(1 for kw in keywords if kw in description_lower)
+                score = title_score + description_score
                 if score > best_score:
                     best_score = score
                     best_sector = sector_id

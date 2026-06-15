@@ -34,6 +34,8 @@ class DeploymentConfig:
     reporting_schema: str = "reporting"
     metadata_schema: str = "metadata"
     audit_schema: str = "audit"
+    quarantine_schema: str = "quarantine"
+    publish_schema: str = "publish"
     
     # Deployment settings
     dry_run: bool = False
@@ -67,6 +69,8 @@ class DeploymentConfig:
             reporting_schema=os.getenv("REPORTING_SCHEMA", "reporting"),
             metadata_schema=os.getenv("METADATA_SCHEMA", "metadata"),
             audit_schema=os.getenv("AUDIT_SCHEMA", "audit"),
+            quarantine_schema=os.getenv("QUARANTINE_SCHEMA", "quarantine"),
+            publish_schema=os.getenv("PUBLISH_SCHEMA", "publish"),
             notification_email=os.getenv("NOTIFICATION_EMAIL", "aaryan.shrivastav1403@gmail.com"),
             default_cluster_id=os.getenv("DEFAULT_CLUSTER_ID"),
             use_serverless=os.getenv("USE_SERVERLESS", "true").lower() == "true"

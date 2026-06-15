@@ -313,3 +313,186 @@ def sample_dim_jobs(spark):
     ])
     
     return spark.createDataFrame(data, schema)
+
+
+@pytest.fixture
+def scd2_update_function():
+    """
+    Provide SCD2 update function that properly enforces 'only one current version' constraint.
+    
+    This function handles the complete SCD2 Type 2 update logic:
+    1. Expires old versions by setting is_current=False and effective_to=change_date
+    2. Inserts new versions with is_current=True and effective_from=change_date
+    3. Ensures only ONE current version per business key
+    
+    Args:
+        current_df: Current dimension table DataFrame
+        staging_df: Staging data with new/changed records
+        business_key: Column name for business key (e.g., 'enterprise_job_id')
+        change_date: Timestamp for the change
+        
+    Returns:
+        Updated DataFrame with old versions expired and new versions added
+    """
+    from pyspark.sql import functions as F
+    
+    def update_scd2(current_df, staging_df, business_key, change_date):
+        """
+        Apply SCD2 logic: expire old versions, add new versions.
+        """
+        # Get list of changed business keys
+        changed_keys = [row[business_key] for row in staging_df.select(business_key).distinct().collect()]
+        
+        # Step 1: Expire old versions for changed keys
+        # Mark all versions of changed keys as not current
+        expired_df = current_df.withColumn(
+            "is_current",
+            F.when(
+                F.col(business_key).isin(changed_keys),
+                F.lit(False)
+            ).otherwise(F.col("is_current"))
+        ).withColumn(
+            "effective_to",
+            F.when(
+                (F.col(business_key).isin(changed_keys)) & (F.col("is_current") == True),
+                F.lit(change_date)
+            ).otherwise(F.col("effective_to"))
+        )
+        
+        # Reapply the is_current=False to ensure it takes effect
+        expired_df = expired_df.withColumn(
+            "is_current",
+            F.when(
+                F.col(business_key).isin(changed_keys),
+                F.lit(False)
+            ).otherwise(F.col("is_current"))
+        )
+        
+        # Step 2: Prepare new versions from staging
+        # Add SCD2 metadata columns to staging data
+        new_versions_df = staging_df.withColumn("effective_from", F.lit(change_date)) \
+            .withColumn("effective_to", F.lit(None).cast("timestamp")) \
+            .withColumn("is_current", F.lit(True))
+        
+        # Step 3: Union expired old versions with new current versions
+        result_df = expired_df.union(new_versions_df)
+        
+        return result_df
+    
+    return update_scd2
+
+
+@pytest.fixture
+def quarantine_routing_function():
+    """
+    Provide quarantine routing function with suspicious content pattern detection.
+    
+    Implements data quality rules to flag jobs for quarantine:
+    1. Missing required fields (NULL values)
+    2. Empty strings in required fields
+    3. Suspicious content patterns (spam indicators)
+    4. Invalid data formats
+    
+    Args:
+        df: Input DataFrame with job data
+        required_fields: List of field names that cannot be NULL or empty
+        
+    Returns:
+        DataFrame with is_quarantined and quarantine_reason columns
+    """
+    from pyspark.sql import functions as F
+    
+    def route_to_quarantine(df, required_fields=None):
+        """
+        Apply quarantine routing rules.
+        """
+        if required_fields is None:
+            required_fields = ["company", "title", "description"]
+        
+        # Start with no quarantine
+        result_df = df.withColumn("is_quarantined", F.lit(False)) \
+                      .withColumn("quarantine_reason", F.lit(None).cast("string"))
+        
+        # Rule 1: Missing required fields (NULL or empty)
+        for field in required_fields:
+            if field in df.columns:
+                result_df = result_df.withColumn(
+                    "is_quarantined",
+                    F.when(
+                        F.col(field).isNull() | (F.trim(F.col(field)) == ""),
+                        F.lit(True)
+                    ).otherwise(F.col("is_quarantined"))
+                ).withColumn(
+                    "quarantine_reason",
+                    F.when(
+                        (F.col(field).isNull() | (F.trim(F.col(field)) == "")) & F.col("quarantine_reason").isNull(),
+                        F.lit("MISSING_REQUIRED_FIELD")
+                    ).otherwise(F.col("quarantine_reason"))
+                )
+        
+        # Rule 2: Suspicious content patterns
+        if "title" in df.columns:
+            # Excessive exclamation marks in title (more than 2)
+            result_df = result_df.withColumn(
+                "is_quarantined",
+                F.when(
+                    F.length(F.regexp_replace(F.col("title"), "[^!]", "")) > 2,
+                    F.lit(True)
+                ).otherwise(F.col("is_quarantined"))
+            ).withColumn(
+                "quarantine_reason",
+                F.when(
+                    (F.length(F.regexp_replace(F.col("title"), "[^!]", "")) > 2) & F.col("quarantine_reason").isNull(),
+                    F.lit("SUSPICIOUS_CONTENT")
+                ).otherwise(F.col("quarantine_reason"))
+            )
+        
+        if "description" in df.columns:
+            # Excessive exclamation marks in description (more than 5)
+            result_df = result_df.withColumn(
+                "is_quarantined",
+                F.when(
+                    F.length(F.regexp_replace(F.col("description"), "[^!]", "")) > 5,
+                    F.lit(True)
+                ).otherwise(F.col("is_quarantined"))
+            ).withColumn(
+                "quarantine_reason",
+                F.when(
+                    (F.length(F.regexp_replace(F.col("description"), "[^!]", "")) > 5) & F.col("quarantine_reason").isNull(),
+                    F.lit("SUSPICIOUS_CONTENT")
+                ).otherwise(F.col("quarantine_reason"))
+            )
+            
+            # Excessive dollar signs (more than 3)
+            result_df = result_df.withColumn(
+                "is_quarantined",
+                F.when(
+                    F.length(F.regexp_replace(F.col("description"), "[^$]", "")) > 3,
+                    F.lit(True)
+                ).otherwise(F.col("is_quarantined"))
+            ).withColumn(
+                "quarantine_reason",
+                F.when(
+                    (F.length(F.regexp_replace(F.col("description"), "[^$]", "")) > 3) & F.col("quarantine_reason").isNull(),
+                    F.lit("SUSPICIOUS_CONTENT")
+                ).otherwise(F.col("quarantine_reason"))
+            )
+            
+            # Description too long (more than 5000 characters)
+            result_df = result_df.withColumn(
+                "is_quarantined",
+                F.when(
+                    F.length(F.col("description")) > 5000,
+                    F.lit(True)
+                ).otherwise(F.col("is_quarantined"))
+            ).withColumn(
+                "quarantine_reason",
+                F.when(
+                    (F.length(F.col("description")) > 5000) & F.col("quarantine_reason").isNull(),
+                    F.lit("SUSPICIOUS_CONTENT")
+                ).otherwise(F.col("quarantine_reason"))
+            )
+        
+        return result_df
+    
+    return route_to_quarantine

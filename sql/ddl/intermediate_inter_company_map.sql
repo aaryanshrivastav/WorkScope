@@ -5,7 +5,7 @@
 -- ============================================================================
 -- Purpose: Physical table definition for inter_company_map
 -- Dependencies: workspace.intermediate.inter_company_canonical
--- Consumers: workspace.warehouse.dim_company
+-- Consumers: workspace.gold.dim_company
 -- Expected Output: Table created with 5 columns
 -- ============================================================================
 
