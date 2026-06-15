@@ -18,7 +18,7 @@ SELECT
   gha.avg_salary,
   gha.updated_at
 FROM workspace.gold.gold_hiring_activity gha
-INNER JOIN workspace.warehouse.dim_sector s ON gha.sector_sk = s.sector_sk
+INNER JOIN workspace.gold.dim_sector s ON gha.sector_sk = s.sector_sk
 WHERE s.sector_name IN ('Hospitality', 'Hotels & Resorts', 'Restaurants', 'Food & Beverage')
    OR s.sector_family = 'Hospitality';
 

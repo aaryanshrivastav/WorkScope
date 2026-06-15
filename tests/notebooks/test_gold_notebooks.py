@@ -1,5 +1,5 @@
 """
-Integration tests for Warehouse layer notebooks.
+Integration tests for Gold layer notebooks.
 
 Tests verify:
 - SCD2 dimension building (uses test_scd2_key_generation.py)
@@ -13,21 +13,21 @@ from datetime import datetime
 
 
 WORKSPACE_ROOT = "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP"
-WAREHOUSE_NOTEBOOKS = {
-    "wh_dim_job_scd2": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_job_scd2",
-    "wh_dim_company": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_company",
-    "wh_dim_company_alias": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_company_alias",
-    "wh_dim_role": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_role",
-    "wh_dim_sector": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_sector",
-    "wh_dim_skill": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_skill",
-    "wh_dim_location": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_location",
-    "wh_dim_source": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_source",
-    "wh_dim_date": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_dim_date",
-    "wh_bridge_job_skill": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_bridge_job_skill",
-    "wh_fact_job_postings": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_fact_job_postings",
-    "wh_fact_job_lifecycle": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_fact_job_lifecycle",
-    "wh_fact_salary": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_fact_salary",
-    "wh_fact_pipeline_runs": f"{WORKSPACE_ROOT}/notebooks/warehouse/wh_fact_pipeline_runs",
+GOLD_NOTEBOOKS = {
+    "gold_dim_job_scd2": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_job_scd2",
+    "gold_dim_company": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_company",
+    "gold_dim_company_alias": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_company_alias",
+    "gold_dim_role": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_role",
+    "gold_dim_sector": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_sector",
+    "gold_dim_skill": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_skill",
+    "gold_dim_location": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_location",
+    "gold_dim_source": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_source",
+    "gold_dim_date": f"{WORKSPACE_ROOT}/notebooks/gold/gold_dim_date",
+    "gold_bridge_job_skill": f"{WORKSPACE_ROOT}/notebooks/gold/gold_bridge_job_skill",
+    "gold_fact_job_postings": f"{WORKSPACE_ROOT}/notebooks/gold/gold_fact_job_postings",
+    "gold_fact_job_lifecycle": f"{WORKSPACE_ROOT}/notebooks/gold/gold_fact_job_lifecycle",
+    "gold_fact_salary": f"{WORKSPACE_ROOT}/notebooks/gold/gold_fact_salary",
+    "gold_fact_pipeline_runs": f"{WORKSPACE_ROOT}/notebooks/gold/gold_fact_pipeline_runs",
 }
 
 
@@ -36,12 +36,12 @@ def test_catalog():
     return os.getenv("TEST_CATALOG", "workspace")
 
 
-class TestWarehouseNotebookStructure:
-    """Verify warehouse notebook structure."""
+class TestGoldNotebookStructure:
+    """Verify gold notebook structure."""
 
     def test_all_notebooks_exist(self, workspace_client):
-        """Verify all warehouse notebooks exist."""
-        for name, path in WAREHOUSE_NOTEBOOKS.items():
+        """Verify all gold notebooks exist."""
+        for name, path in GOLD_NOTEBOOKS.items():
             try:
                 workspace_client.workspace.get_status(path)
             except Exception as e:
@@ -49,7 +49,7 @@ class TestWarehouseNotebookStructure:
 
 
 class TestDimJobSCD2:
-    """Test wh_dim_job_scd2 notebook (uses test_scd2_key_generation.py)."""
+    """Test gold_dim_job_scd2 notebook (uses test_scd2_key_generation.py)."""
 
     def test_scd2_version_tracking(self, spark):
         """Test SCD2 versioning logic."""
@@ -83,7 +83,7 @@ class TestDimJobSCD2:
 
 
 class TestDimCompany:
-    """Test wh_dim_company notebook."""
+    """Test gold_dim_company notebook."""
 
     def test_company_dimension_structure(self, spark):
         """Test company dimension table structure."""
@@ -101,7 +101,7 @@ class TestDimCompany:
 
 
 class TestDimCompanyAlias:
-    """Test wh_dim_company_alias notebook."""
+    """Test gold_dim_company_alias notebook."""
 
     def test_company_alias_mapping(self, spark):
         """Test company alias mappings."""
@@ -121,7 +121,7 @@ class TestDimCompanyAlias:
 
 
 class TestBridgeJobSkill:
-    """Test wh_bridge_job_skill notebook."""
+    """Test gold_bridge_job_skill notebook."""
 
     def test_job_skill_relationships(self, spark):
         """Test job-skill bridge table."""
@@ -142,7 +142,7 @@ class TestBridgeJobSkill:
 
 
 class TestFactJobPostings:
-    """Test wh_fact_job_postings notebook."""
+    """Test gold_fact_job_postings notebook."""
 
     def test_fact_table_grain(self, spark):
         """Test fact table grain and measures."""
@@ -160,7 +160,7 @@ class TestFactJobPostings:
 
 
 class TestFactJobLifecycle:
-    """Test wh_fact_job_lifecycle notebook."""
+    """Test gold_fact_job_lifecycle notebook."""
 
     def test_lifecycle_events(self, spark):
         """Test job lifecycle event tracking."""
@@ -181,7 +181,7 @@ class TestFactJobLifecycle:
 
 
 class TestFactSalary:
-    """Test wh_fact_salary notebook."""
+    """Test gold_fact_salary notebook."""
 
     def test_salary_aggregations(self, spark):
         """Test salary fact table."""
@@ -202,7 +202,7 @@ class TestFactSalary:
 
 
 class TestFactPipelineRuns:
-    """Test wh_fact_pipeline_runs notebook."""
+    """Test gold_fact_pipeline_runs notebook."""
 
     def test_pipeline_run_metrics(self, spark):
         """Test pipeline run metrics."""
@@ -222,11 +222,11 @@ class TestFactPipelineRuns:
 
 
 @pytest.mark.integration
-class TestWarehouseNotebookExecution:
-    """Integration tests for warehouse notebooks."""
+class TestGoldNotebookExecution:
+    """Integration tests for gold notebooks."""
 
-    def test_warehouse_build_workflow(self, workspace_client):
-        """Test complete warehouse build workflow."""
+    def test_gold_build_workflow(self, workspace_client):
+        """Test complete gold build workflow."""
         pytest.skip("Requires deployed workflow - see test_workflows.py")
 
 

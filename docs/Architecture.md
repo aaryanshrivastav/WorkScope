@@ -13,7 +13,7 @@
 ### Key Characteristics
 
 * **Cloud-Native**: 100% Databricks serverless compute
-* **Medallion Pattern**: Bronze → Silver → Semantic → Warehouse → Gold
+* **Medallion Pattern**: Bronze → Silver → Intermediate → Gold → Reporting
 * **Data Sources**: External job APIs (Remotive, Arbeitnow)
 * **Target Catalog**: `workspace` (Unity Catalog)
 * **Orchestration**: Databricks Workflows with file-arrival triggers
@@ -55,7 +55,7 @@
                        │ Entity Resolution
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  SEMANTIC LAYER (Enriched)                                      │
+│  INTERMEDIATE LAYER (Enriched)                                      │
 │  • Role taxonomy mapping                                        │
 │  • Company canonicalization                                     │
 │  • Sector normalization                                         │
@@ -66,7 +66,7 @@
                        │ Star Schema
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  WAREHOUSE LAYER (Star Schema)                                  │
+│  GOLD LAYER (Star Schema)                                  │
 │  • Kimball dimensional model                                    │
 │  • SCD Type 2 for job dimension                                 │
 │  • 9 dimensions, 4 facts, 1 bridge                             │
@@ -76,11 +76,11 @@
                        │ BI Marts
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  GOLD LAYER (Analytics Marts)                                   │
+│  REPORTING LAYER (Analytics Marts)                                   │
 │  • Pre-aggregated metrics                                       │
 │  • Dashboard-ready tables                                       │
 │  • Time-series trends                                           │
-│  Tables: gold_salary_trends, gold_skill_demand, gold_hiring_*   │
+│  Tables: reporting_salary_trends, reporting_skill_demand, reporting_hiring_*   │
 └──────────────────────┬──────────────────────────────────────────┘
                        │ Export
                        │ Publishing
@@ -143,7 +143,7 @@
 * `workspace.silver.silver_job_changes` - Audit trail of all job changes
 * `workspace.silver.silver_skill_mapping` - Skills extracted from job descriptions
 * `workspace.silver.silver_job_identity_map` - Canonical job identity mapping
-* `workspace.silver.silver_semantic_review_queue` - Low-confidence records for review
+* `workspace.silver.silver_intermediate_review_queue` - Low-confidence records for review
 
 **Key Operations**:
 1. **Standardization**: Normalize company names, titles, locations
@@ -161,7 +161,7 @@
 
 ---
 
-### 3. Semantic Layer: Enrichment & Canonicalization
+### 3. Intermediate Layer: Enrichment & Canonicalization
 
 **Purpose**: Map raw values to canonical business entities using hybrid matching (rules + ML)
 
@@ -172,11 +172,11 @@
 * **Deterministic-First**: Prefer rules over ML for predictability
 
 **Tables**:
-* `workspace.semantic.sem_job_role_map` - Job title → canonical role
-* `workspace.semantic.sem_company_map` - Company name → canonical entity
-* `workspace.semantic.sem_sector_map` - Industry sector normalization
-* `workspace.semantic.sem_skill_catalog` - Canonical skill taxonomy
-* `workspace.semantic.sem_skill_graph` - Skill relationships (co-occurrence, prerequisite)
+* `workspace.intermediate.sem_job_role_map` - Job title → canonical role
+* `workspace.intermediate.sem_company_map` - Company name → canonical entity
+* `workspace.intermediate.sem_sector_map` - Industry sector normalization
+* `workspace.intermediate.sem_skill_catalog` - Canonical skill taxonomy
+* `workspace.intermediate.sem_skill_graph` - Skill relationships (co-occurrence, prerequisite)
 
 **Key Operations**:
 1. **Role Mapping**: Dictionary → Regex → LLM fallback (optional)
@@ -193,7 +193,7 @@
 
 ---
 
-### 4. Warehouse Layer: Dimensional Model
+### 4. Gold Layer: Dimensional Model (Star Schema)
 
 **Purpose**: Implement Kimball-style star schema for BI and analytics
 
@@ -237,7 +237,7 @@
 
 ---
 
-### 5. Gold Layer: Analytics Marts
+### 5. Reporting Layer: Analytics Marts
 
 **Purpose**: Pre-aggregated, dashboard-ready business metrics
 
@@ -248,16 +248,16 @@
 * **Multiple Grain Levels**: Drill-down capability (total → sector → role → location)
 
 **Tables**:
-* `gold_salary_trends` - Salary analytics with percentile distributions
-* `gold_skill_demand` - Skill demand trends and co-occurrence
-* `gold_hiring_trends` - Job posting velocity and hiring activity
+* `reporting_salary_trends` - Salary analytics with percentile distributions
+* `reporting_skill_demand` - Skill demand trends and co-occurrence
+* `reporting_hiring_trends` - Job posting velocity and hiring activity
 * `gold_company_hiring` - Company-level hiring metrics
 * `gold_location_trends` - Geographic hiring trends
 * `gold_sector_overview` - Sector-level aggregations
 * `gold_pipeline_health` - Operational monitoring
 * `gold_company_activity` - Company hiring activity by sector
-* `gold_hiring_activity` - Sector-aware hiring trends
-* `gold_skill_demand_by_sector` - Skill demand analysis by sector
+* `reporting_hiring_activity` - Sector-aware hiring trends
+* `reporting_skill_demand_by_sector` - Skill demand analysis by sector
 
 **Key Metrics**:
 * Salary percentiles (P25, P50, P75, P90)
@@ -267,7 +267,7 @@
 * Data quality and pipeline health metrics
 
 **Failure Modes**:
-* Aggregation failures: Retry or fallback to warehouse queries
+* Aggregation failures: Retry or fallback to gold layer queries
 * Empty rollup groups: Filter for minimum observation counts
 * Performance degradation: Optimize/ZORDER tables
 
@@ -384,7 +384,7 @@
 
 ### Why Single Catalog?
 * **Simplicity**: Single `workspace` catalog reduces complexity
-* **Schema Isolation**: Layers separated by schema (bronze, silver, semantic, warehouse, gold)
+* **Schema Isolation**: Layers separated by schema (bronze, silver, intermediate, gold, reporting)
 * **Access Control**: Simplified governance with schema-level permissions
 
 ### Why SCD Type 2 for Jobs Only?
@@ -424,7 +424,7 @@
 * **Horizontal Scaling**: Databricks serverless auto-scales compute
 * **Data Growth**: Bronze layer grows linearly with ingestion volume
 * **Query Performance**: Gold layer pre-aggregations remain fast
-* **Bottlenecks**: Semantic layer (LLM calls) and warehouse build (SCD2)
+* **Bottlenecks**: Intermediate layer (LLM calls) and gold build (SCD2)
 
 ---
 
@@ -459,7 +459,7 @@
 * Additional data sources (LinkedIn, Indeed, Glassdoor)
 * Real-time API endpoints for consumers
 * Advanced ML models for skill extraction
-* Interactive review UI for quarantine and semantic queues
+* Interactive review UI for quarantine and intermediate queues
 
 ### Long-Term (2027+)
 * Multi-catalog architecture (dev, staging, prod)

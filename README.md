@@ -29,9 +29,11 @@ Bronze Layer (Raw ingestion)
        ↓  
 Silver Layer (Standardization + Deduplication)  
        ↓  
-Warehouse Layer (Star schema with dimensions)  
+Intermediate Layer (Enrichment + Canonicalization)
        ↓  
-Gold Layer (Aggregated analytics)  
+Gold Layer (Star schema with dimensions)  
+       ↓  
+Reporting Layer (Aggregated analytics)  
        ↓  
 Publishing (CSV bundles + Supabase)
 ```
@@ -60,6 +62,7 @@ Publishing (CSV bundles + Supabase)
 ### For Data Analysts
 
 * **[docs/Data_Model.md](./docs/Data_Model.md)** - Star schema and table relationships
+* **[docs/knowledge_graph_ontology.md](./docs/knowledge_graph_ontology.md)** - Knowledge graph ontology (sector-agnostic labor market model)
 * **[docs/Consumer_Bootstrap.md](./docs/Consumer_Bootstrap.md)** - Query examples and patterns
 
 ---
@@ -72,6 +75,7 @@ LMIP/
 ├── docs/
 │   ├── Architecture.md
 │   ├── Data_Model.md
+│   ├── knowledge_graph_ontology.md  (Knowledge graph ontology)
 │   ├── Pipeline_Flow.md
 │   ├── Data_Quality_Framework.md
 │   ├── Publishing_Index.md         (⭐ Publishing docs index)
@@ -83,9 +87,9 @@ LMIP/
 ├── contracts/
 │   ├── bronze/               (Bronze layer contracts)
 │   ├── silver/               (Silver layer contracts)
-│   ├── semantic/             (Semantic layer contracts)
-│   ├── warehouse/            (Warehouse dimension contracts)
-│   ├── gold/                 (Gold layer contracts)
+│   ├── intermediate/         (Intermediate layer contracts)
+│   ├── gold/                (Gold layer dimension contracts)
+│   ├── reporting/            (Reporting layer contracts)
 │   ├── metadata/             (Metadata contracts)
 │   ├── audit/                (Audit table contracts)
 │   ├── quarantine/           (Quarantine contracts)
@@ -124,9 +128,14 @@ LMIP/
 **Schema:** `workspace.silver`  
 **Format:** Canonical schemas, type-safe
 
-### Warehouse Layer
+### Intermediate Layer
+**Purpose:** Enrichment and canonicalization  
+**Schema:** `workspace.intermediate`  
+**Format:** Canonical entities and mappings
+
+### Reporting Layer
 **Purpose:** Star schema with dimension tables  
-**Schema:** `workspace.warehouse`  
+**Schema:** `workspace.reporting`  
 **Tables:**
 * dim_sector
 * dim_company
@@ -139,11 +148,11 @@ LMIP/
 **Purpose:** Business-ready aggregates  
 **Schema:** `workspace.gold`  
 **Tables:**
-* gold_company_hiring
-* gold_hospitality_companies
-* gold_salary_trends
-* gold_skill_demand
-* gold_location_trends
+* reporting_company_hiring
+* reporting_hospitality_companies
+* reporting_salary_trends
+* reporting_skill_demand
+* reporting_location_trends
 
 ---
 

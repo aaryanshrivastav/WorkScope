@@ -40,11 +40,11 @@ Recovery_Silver_Reprocess
 Recovery_CDC_Reprocess
 (Recalculate change data capture)
               ↓
-Recovery_Semantic_Reprocess
-(Re-run semantic enrichment)
+Recovery_Intermediate_Reprocess
+(Re-run intermediate enrichment)
               ↓
-Recovery_Warehouse_Rebuild
-(Full refresh of warehouse layer)
+Recovery_Gold_Rebuild
+(Full refresh of gold layer)
               ↓
 Recovery_Validation_Report (always runs)
 (Generate validation summary report)
@@ -74,7 +74,7 @@ Recovery_Validation_Report (always runs)
 
 **Root Cause**: External API downtime (Remotive, Arbeitnow)
 
-**Impact**: Missing job postings in silver/warehouse layers
+**Impact**: Missing job postings in silver/gold layers
 
 **Recovery Steps**:
 
@@ -146,7 +146,7 @@ WHERE created_at >= '2026-06-01'
   AND source_name = 'remotive';
 ```
 
-**Expected Outcome**: Bronze records created, silver/warehouse/gold automatically updated
+**Expected Outcome**: Bronze records created, silver/gold/reporting automatically updated
 
 **Rollback**: If backfill is incorrect, delete by batch_id:
 ```sql
@@ -165,7 +165,7 @@ WHERE batch_id = '<recovery_batch_id>';
 * Invalid data (malformed URLs, wrong date formats)
 * Business rule violations (salary_max < salary_min)
 
-**Impact**: Records not progressing to warehouse/gold layers
+**Impact**: Records not progressing to gold/reporting layers
 
 **Recovery Steps**:
 
@@ -418,8 +418,8 @@ SELECT 'silver', COUNT(*)
 FROM silver.silver_jobs_current
 WHERE current_batch_id = '<recovery_batch_id>'
 UNION ALL
-SELECT 'warehouse', COUNT(*)
-FROM warehouse.fact_job_postings
+SELECT 'gold', COUNT(*)
+FROM gold.fact_job_postings
 WHERE batch_id = '<recovery_batch_id>';
 
 -- Check DQ pass rate
@@ -471,17 +471,17 @@ WHERE current_batch_id = '<recovery_batch_id>'
   AND created_at >= CURRENT_DATE();
 ```
 
-### Rollback Warehouse Layer
+### Rollback Gold Layer
 
 **Use Case**: Full rebuild failed, need to restore from previous snapshot
 
 ```sql
 -- Use Delta time travel to restore
-RESTORE TABLE warehouse.dim_job_scd2 TO VERSION AS OF <previous_version>;
-RESTORE TABLE warehouse.fact_job_postings TO VERSION AS OF <previous_version>;
+RESTORE TABLE gold.dim_job_scd2 TO VERSION AS OF <previous_version>;
+RESTORE TABLE gold.fact_job_postings TO VERSION AS OF <previous_version>;
 
 -- Find previous version:
-DESCRIBE HISTORY warehouse.dim_job_scd2;
+DESCRIBE HISTORY gold.dim_job_scd2;
 ```
 
 ### Rollback Gold Layer
@@ -489,7 +489,7 @@ DESCRIBE HISTORY warehouse.dim_job_scd2;
 **Use Case**: Aggregation logic error
 
 ```sql
--- Drop and recreate from warehouse
+-- Drop and recreate from gold
 DROP TABLE gold.gold_salary_trends;
 
 -- Re-run gold build workflow

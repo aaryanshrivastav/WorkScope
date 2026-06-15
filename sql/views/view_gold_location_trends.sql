@@ -4,7 +4,7 @@
 -- Description: Geographic hiring trends and location-based analytics
 -- ============================================================================
 -- Purpose: Gold analytical view for gold_location_trends
--- Dependencies: workspace.warehouse.fact_job_postings, workspace.warehouse.dim_location
+-- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_location
 -- Expected Output: Aggregated metrics with 8 columns
 -- ============================================================================
 
@@ -18,8 +18,8 @@ WITH location_metrics AS (
     COUNT(CASE WHEN d.remote_type = 'ONSITE' THEN 1 END) AS onsite_jobs,
     AVG(d.salary_max) AS avg_salary_usd,
     f.sector_sk
-  FROM workspace.warehouse.fact_job_postings f
-  JOIN workspace.warehouse.dim_job d ON f.job_sk = d.job_sk AND d.is_current = TRUE
+  FROM workspace.gold.fact_job_postings f
+  JOIN workspace.gold.dim_job d ON f.job_sk = d.job_sk AND d.is_current = TRUE
   WHERE f.active_flag = TRUE
   GROUP BY f.location_sk, f.posting_date_sk, f.sector_sk
 ),
@@ -46,7 +46,7 @@ LEFT JOIN top_sector_per_location ts
   ON lm.location_sk = ts.location_sk 
   AND lm.trend_date_sk = ts.trend_date_sk 
   AND ts.rn = 1
-LEFT JOIN workspace.warehouse.dim_sector s ON ts.sector_sk = s.sector_sk
+LEFT JOIN workspace.gold.dim_sector s ON ts.sector_sk = s.sector_sk
 GROUP BY lm.location_sk, lm.trend_date_sk, s.sector_name
 
 -- End of VIEW definition

@@ -318,7 +318,7 @@ WHERE hiring_date_sk > (
 ```sql
 -- Export only changed dimensions
 SELECT *
-FROM workspace.warehouse.dim_company
+FROM workspace.gold.dim_company
 WHERE last_modified_ts > (
   SELECT MAX(published_at) 
   FROM version_history 

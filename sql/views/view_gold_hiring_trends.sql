@@ -4,7 +4,7 @@
 -- Description: Aggregated hiring trends by date and sector
 -- ============================================================================
 -- Purpose: Time-series analysis of hiring patterns across sectors
--- Dependencies: workspace.warehouse.fact_job_postings, workspace.warehouse.dim_sector, workspace.warehouse.dim_date
+-- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_sector, workspace.gold.dim_date
 -- Expected Output: Daily/weekly/monthly hiring metrics by sector
 -- ============================================================================
 
@@ -19,9 +19,9 @@ SELECT
   COUNT(DISTINCT f.company_sk) AS unique_companies,
   AVG(DATEDIFF(DAY, f.posting_timestamp, CURRENT_TIMESTAMP())) AS avg_days_to_fill,
   CURRENT_TIMESTAMP() AS updated_at
-FROM workspace.warehouse.fact_job_postings f
-JOIN workspace.warehouse.dim_date d ON f.posting_date_sk = d.date_sk
-JOIN workspace.warehouse.dim_sector s ON f.sector_sk = s.sector_sk
+FROM workspace.gold.fact_job_postings f
+JOIN workspace.gold.dim_date d ON f.posting_date_sk = d.date_sk
+JOIN workspace.gold.dim_sector s ON f.sector_sk = s.sector_sk
 GROUP BY d.date_sk, s.sector_sk, s.sector_name;
 
 -- End of VIEW definition

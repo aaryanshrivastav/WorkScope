@@ -23,10 +23,11 @@ class TestSurrogateKeyGeneration:
             ("job_002", "Engineer"),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["enterprise_job_id", "title"]
-        )
+        schema = StructType([
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Generate surrogate keys using row_number
         from pyspark.sql.window import Window
@@ -50,10 +51,13 @@ class TestSurrogateKeyGeneration:
             (2, "job_001", "Senior Developer", 2), # Version 2 (updated title)
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "title", "expected_sk"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("expected_sk", IntegerType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         results = df.collect()
         
@@ -73,10 +77,11 @@ class TestSurrogateKeyGeneration:
             (new_sk_start + 1, "job_new_002"),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         results = df.collect()
         
@@ -94,20 +99,28 @@ class TestSCD2ChangeDetection:
             (1, "job_001", "Developer", "acme", "hash_old", True),
         ]
         
-        current_df = spark.createDataFrame(
-            current_data,
-            ["job_sk", "enterprise_job_id", "title", "company", "record_hash", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("record_hash", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        current_df = spark.createDataFrame(current_data, schema)
         
         # New staging data
         staging_data = [
             ("job_001", "Senior Developer", "acme", "hash_new"),  # Title changed
         ]
         
-        staging_df = spark.createDataFrame(
-            staging_data,
-            ["enterprise_job_id", "title", "company", "record_hash"]
-        )
+        schema = StructType([
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("record_hash", StringType(), True)
+        ])
+        staging_df = spark.createDataFrame(staging_data, schema)
         
         # Detect changes (hash mismatch)
         changes_df = current_df.alias("cur").join(
@@ -127,19 +140,25 @@ class TestSCD2ChangeDetection:
             (1, "job_001", "Developer", "hash_same", True),
         ]
         
-        current_df = spark.createDataFrame(
-            current_data,
-            ["job_sk", "enterprise_job_id", "title", "record_hash", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("record_hash", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        current_df = spark.createDataFrame(current_data, schema)
         
         staging_data = [
             ("job_001", "Developer", "hash_same"),  # Same hash
         ]
         
-        staging_df = spark.createDataFrame(
-            staging_data,
-            ["enterprise_job_id", "title", "record_hash"]
-        )
+        schema = StructType([
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("record_hash", StringType(), True)
+        ])
+        staging_df = spark.createDataFrame(staging_data, schema)
         
         # Detect changes
         changes_df = current_df.alias("cur").join(
@@ -159,19 +178,23 @@ class TestSCD2ChangeDetection:
             (1, "job_001", "Developer", True),
         ]
         
-        current_df = spark.createDataFrame(
-            current_data,
-            ["job_sk", "enterprise_job_id", "title", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        current_df = spark.createDataFrame(current_data, schema)
         
         staging_data = [
             ("job_002", "Engineer"),  # New job
         ]
         
-        staging_df = spark.createDataFrame(
-            staging_data,
-            ["enterprise_job_id", "title"]
-        )
+        schema = StructType([
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True)
+        ])
+        staging_df = spark.createDataFrame(staging_data, schema)
         
         # Detect new records (left anti join)
         new_df = staging_df.alias("stg").join(
@@ -194,10 +217,13 @@ class TestSCD2EffectiveDates:
             ("job_001", "Developer", current_date, None),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["enterprise_job_id", "title", "effective_from", "effective_to"]
-        )
+        schema = StructType([
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         result = df.collect()[0]
         
@@ -211,10 +237,15 @@ class TestSCD2EffectiveDates:
             (1, "job_001", "Developer", datetime(2026, 6, 1), None, True),
         ]
         
-        current_df = spark.createDataFrame(
-            current_data,
-            ["job_sk", "enterprise_job_id", "title", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        current_df = spark.createDataFrame(current_data, schema)
         
         # Update: expire old record
         change_date = datetime(2026, 6, 7)
@@ -242,10 +273,15 @@ class TestSCD2EffectiveDates:
             (2, "job_001", "Senior Developer", change_date, None, True),  # New version
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "title", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         result = df.collect()[0]
         
@@ -264,10 +300,13 @@ class TestSCD2CurrentFlag:
             (3, "job_002", "Engineer", True),       # Current (different job)
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "title", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Count current versions per job
         current_per_job = df.filter(F.col("is_current") == True) \
@@ -285,10 +324,12 @@ class TestSCD2CurrentFlag:
             (1, "job_001", True),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Simulate update: flip flag
         updated_df = df.withColumn("is_current", F.lit(False))
@@ -322,10 +363,15 @@ class TestSCD2CompleteFlow:
             (1, "job_001", "Developer", current_date, None, True),
         ]
         
-        new_df = spark.createDataFrame(
-            new_job,
-            ["job_sk", "enterprise_job_id", "title", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        new_df = spark.createDataFrame(new_job, schema)
         
         # Union to insert
         result_df = current_df.union(new_df)
@@ -342,10 +388,15 @@ class TestSCD2CompleteFlow:
             (1, "job_001", "Developer", datetime(2026, 6, 1), None, True),
         ]
         
-        current_df = spark.createDataFrame(
-            current_data,
-            ["job_sk", "enterprise_job_id", "title", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        current_df = spark.createDataFrame(current_data, schema)
         
         # Step 1: Expire old version
         change_date = datetime(2026, 6, 7)
@@ -358,10 +409,15 @@ class TestSCD2CompleteFlow:
             (2, "job_001", "Senior Developer", change_date, None, True),
         ]
         
-        new_version_df = spark.createDataFrame(
-            new_version,
-            ["job_sk", "enterprise_job_id", "title", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        new_version_df = spark.createDataFrame(new_version, schema)
         
         # Union old (expired) and new (current)
         result_df = expired_df.union(new_version_df)
@@ -382,19 +438,25 @@ class TestSCD2CompleteFlow:
             (1, "job_001", "Developer", "hash_same", True),
         ]
         
-        current_df = spark.createDataFrame(
-            current_data,
-            ["job_sk", "enterprise_job_id", "title", "record_hash", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("record_hash", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        current_df = spark.createDataFrame(current_data, schema)
         
         staging_data = [
             ("job_001", "Developer", "hash_same"),  # No change
         ]
         
-        staging_df = spark.createDataFrame(
-            staging_data,
-            ["enterprise_job_id", "title", "record_hash"]
-        )
+        schema = StructType([
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("record_hash", StringType(), True)
+        ])
+        staging_df = spark.createDataFrame(staging_data, schema)
         
         # Detect changes
         changes = current_df.alias("cur").join(
@@ -418,10 +480,13 @@ class TestSCD2HistoricalQuery:
             (2, "job_001", "Sr Developer", False),  # Historical
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "title", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         current_version = df.filter(
             (F.col("enterprise_job_id") == "job_001") &
@@ -438,10 +503,14 @@ class TestSCD2HistoricalQuery:
             (2, "job_001", datetime(2026, 6, 1), None, True),                    # June onwards
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         query_date = datetime(2026, 5, 15)  # Mid-May
         
@@ -462,10 +531,14 @@ class TestSCD2HistoricalQuery:
             (3, "job_001", "Lead Developer", datetime(2026, 7, 1), None),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "title", "effective_from", "effective_to"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         history = df.filter(F.col("enterprise_job_id") == "job_001") \
             .orderBy("effective_from") \
@@ -488,10 +561,13 @@ class TestSCD2EdgeCases:
             (3, "job_001", datetime(2026, 6, 7, 15, 0), None),                          # Afternoon
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "effective_from", "effective_to"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Query at specific time
         query_time = datetime(2026, 6, 7, 12, 0)  # Noon
@@ -516,10 +592,14 @@ class TestSCD2EdgeCases:
             (3, "job_001", datetime(2026, 6, 20), None, True),                    # Recreated
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "effective_from", "effective_to", "is_current"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True),
+            StructField("is_current", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Should have 3 distinct versions
         assert df.count() == 3
@@ -535,10 +615,13 @@ class TestSCD2EdgeCases:
             (2, "job_001", datetime(2026, 6, 15), None),                   # June 15+ (GAP from June 1-14)
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_sk", "enterprise_job_id", "effective_from", "effective_to"]
-        )
+        schema = StructType([
+            StructField("job_sk", IntegerType(), True),
+            StructField("enterprise_job_id", StringType(), True),
+            StructField("effective_from", StringType(), True),
+            StructField("effective_to", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Query in the gap period
         gap_date = datetime(2026, 6, 7)

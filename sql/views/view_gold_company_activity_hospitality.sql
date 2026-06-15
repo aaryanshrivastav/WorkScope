@@ -17,7 +17,7 @@ SELECT
   gca.top_role,
   gca.updated_at
 FROM workspace.gold.gold_company_activity gca
-INNER JOIN workspace.warehouse.dim_sector s ON gca.sector_sk = s.sector_sk
+INNER JOIN workspace.gold.dim_sector s ON gca.sector_sk = s.sector_sk
 WHERE s.sector_name IN ('Hospitality', 'Hotels & Resorts', 'Restaurants', 'Food & Beverage')
    OR s.sector_family = 'Hospitality';
 

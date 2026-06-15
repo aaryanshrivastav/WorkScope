@@ -8,13 +8,13 @@
 
 ## Overview
 
-The LMIP data model implements a **multi-layered medallion architecture** with semantic enrichment and dimensional modeling. All tables reside in the `workspace` Unity Catalog.
+The LMIP data model implements a **multi-layered medallion architecture** with intermediate enrichment and dimensional modeling. All tables reside in the `workspace` Unity Catalog.
 
 **Architecture Layers**:
 1. Bronze: Raw API snapshots
 2. Silver: Cleansed and standardized data
-3. Semantic: Enriched canonical entities
-4. Warehouse: Star schema dimensional model
+3. Intermediate: Enriched canonical entities
+4. Gold: Star schema dimensional model
 5. Gold: Pre-aggregated BI marts
 
 ---
@@ -30,12 +30,12 @@ The LMIP data model implements a **multi-layered medallion architecture** with s
 * `silver.silver_job_changes` - Complete audit trail (CDC log)
 * `silver.silver_skill_mapping` - Extracted skills
 
-### Semantic Layer
-* `semantic.sem_job_role_map` - Title → canonical role mapping
-* `semantic.sem_company_canonical` - Company master
-* `semantic.sem_skill_catalog` - Master skill taxonomy
+### Intermediate Layer
+* `intermediate.sem_job_role_map` - Title → canonical role mapping
+* `intermediate.sem_company_canonical` - Company master
+* `intermediate.sem_skill_catalog` - Master skill taxonomy
 
-### Warehouse Layer
+### Gold Layer
 * **Dimensions (10)**: dim_date, dim_source, dim_sector, dim_skill, dim_role, dim_location, dim_company, dim_company_alias, dim_job_scd2
 * **Facts (4)**: fact_job_postings, fact_job_lifecycle, fact_salary, fact_pipeline_runs
 * **Bridges (1)**: bridge_job_skill

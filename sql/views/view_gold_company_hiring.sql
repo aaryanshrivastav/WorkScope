@@ -4,7 +4,7 @@
 -- Description: Company-level hiring activity and metrics
 -- ============================================================================
 -- Purpose: Gold analytical view for gold_company_hiring
--- Dependencies: workspace.warehouse.fact_job_postings, workspace.warehouse.dim_company
+-- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_company
 -- Expected Output: Aggregated metrics with 8 columns
 -- ============================================================================
 
@@ -19,8 +19,8 @@ WITH company_metrics AS (
     f.location_sk,
     COUNT(CASE WHEN d.remote_type = 'REMOTE' THEN 1 END) AS remote_count,
     COUNT(*) AS total_count
-  FROM workspace.warehouse.fact_job_postings f
-  JOIN workspace.warehouse.dim_job d ON f.job_sk = d.job_sk AND d.is_current = TRUE
+  FROM workspace.gold.fact_job_postings f
+  JOIN workspace.gold.dim_job d ON f.job_sk = d.job_sk AND d.is_current = TRUE
   GROUP BY f.company_sk, f.posting_date_sk, f.role_sk, f.location_sk
 ),
 top_role_per_company AS (
@@ -57,12 +57,12 @@ LEFT JOIN top_role_per_company tr
   ON cm.company_sk = tr.company_sk 
   AND cm.hiring_date_sk = tr.hiring_date_sk 
   AND tr.rn = 1
-LEFT JOIN workspace.warehouse.dim_role r ON tr.role_sk = r.role_sk
+LEFT JOIN workspace.gold.dim_role r ON tr.role_sk = r.role_sk
 LEFT JOIN top_location_per_company tl 
   ON cm.company_sk = tl.company_sk 
   AND cm.hiring_date_sk = tl.hiring_date_sk 
   AND tl.rn = 1
-LEFT JOIN workspace.warehouse.dim_location l ON tl.location_sk = l.location_sk
+LEFT JOIN workspace.gold.dim_location l ON tl.location_sk = l.location_sk
 GROUP BY cm.company_sk, cm.hiring_date_sk, r.role_name, l.city
 
 -- End of VIEW definition

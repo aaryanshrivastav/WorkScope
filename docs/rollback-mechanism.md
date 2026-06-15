@@ -138,7 +138,7 @@ Every rollback is logged with:
 ### Immediate Effects
 
 - **Silver layer**: Records soft-deleted (`is_deleted = true`)
-- **Gold/Warehouse**: Records excluded from views and aggregations (filtered by `is_deleted = false`)
+- **Gold**: Records excluded from views and aggregations (filtered by `is_deleted = false`)
 - **Reporting**: KPIs and metrics automatically exclude rolled back data
 
 ### Recovery After Rollback
@@ -153,7 +153,7 @@ To re-ingest after fixing the issue:
 2. **Run the full recovery workflow** or trigger downstream pipelines:
    - `silver_standardize_jobs` — processes new batch
    - `silver_detect_cdc` — tracks changes
-   - Downstream semantic and warehouse layers rebuild
+   - Downstream intermediate and gold layers rebuild
 
 ## DDL Changes
 
@@ -208,9 +208,9 @@ Recovery_Silver_Reprocess
   ↓
 Recovery_CDC_Reprocess
   ↓
-Recovery_Semantic_Reprocess
+Recovery_Intermediate_Reprocess
   ↓
-Recovery_Warehouse_Rebuild
+Recovery_Gold_Rebuild
   ↓
 Recovery_Quarantine_Manage
   ↓

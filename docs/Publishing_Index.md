@@ -79,7 +79,7 @@ LMIP distributes labor market data through multiple channels to serve different 
 ```bash
 python export_bundle.py \
   --catalog workspace \
-  --warehouse-schema warehouse \
+  --gold-schema gold \
   --gold-schema gold \
   --output /dbfs/mnt/lmip-exports \
   --mode full

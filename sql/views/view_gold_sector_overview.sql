@@ -4,7 +4,7 @@
 -- Description: Sector-level overview with key metrics and trends
 -- ============================================================================
 -- Purpose: Gold analytical view for gold_sector_overview
--- Dependencies: workspace.warehouse.fact_job_postings, workspace.warehouse.fact_salary
+-- Dependencies: workspace.gold.fact_job_postings, workspace.gold.fact_salary
 -- Expected Output: Aggregated metrics with 8 columns
 -- ============================================================================
 
@@ -15,7 +15,7 @@ WITH sector_jobs AS (
     f.posting_date_sk AS overview_date_sk,
     COUNT(DISTINCT f.job_sk) AS total_jobs,
     COUNT(DISTINCT f.company_sk) AS total_companies
-  FROM workspace.warehouse.fact_job_postings f
+  FROM workspace.gold.fact_job_postings f
   WHERE f.active_flag = TRUE
   GROUP BY f.sector_sk, f.posting_date_sk
 ),
@@ -23,7 +23,7 @@ sector_salaries AS (
   SELECT
     fs.sector_sk,
     AVG(fs.salary_max) AS avg_salary_usd
-  FROM workspace.warehouse.fact_salary fs
+  FROM workspace.gold.fact_salary fs
   WHERE fs.is_current = TRUE
   GROUP BY fs.sector_sk
 ),
@@ -33,9 +33,9 @@ top_skills_by_sector AS (
     sk.skill_name,
     COUNT(*) AS skill_count,
     ROW_NUMBER() OVER (PARTITION BY f.sector_sk ORDER BY COUNT(*) DESC) AS rn
-  FROM workspace.warehouse.fact_job_postings f
-  JOIN workspace.warehouse.bridge_job_skill bjs ON f.job_sk = bjs.job_sk
-  JOIN workspace.warehouse.dim_skill sk ON bjs.skill_sk = sk.skill_sk
+  FROM workspace.gold.fact_job_postings f
+  JOIN workspace.gold.bridge_job_skill bjs ON f.job_sk = bjs.job_sk
+  JOIN workspace.gold.dim_skill sk ON bjs.skill_sk = sk.skill_sk
   WHERE f.active_flag = TRUE
   GROUP BY f.sector_sk, sk.skill_name
 ),

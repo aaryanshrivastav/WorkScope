@@ -4,7 +4,7 @@
 -- Description: Salary trends by role, sector, and location
 -- ============================================================================
 -- Purpose: Compensation analysis across different dimensions
--- Dependencies: workspace.warehouse.fact_salary, workspace.warehouse.dim_role, workspace.warehouse.dim_sector
+-- Dependencies: workspace.gold.fact_salary, workspace.gold.dim_role, workspace.gold.dim_sector
 -- Expected Output: Aggregated salary statistics by role/sector/location
 -- ============================================================================
 
@@ -21,9 +21,9 @@ SELECT
   PERCENTILE(fs.salary_max, 0.25) AS p25_salary,
   PERCENTILE(fs.salary_max, 0.75) AS p75_salary,
   CURRENT_TIMESTAMP() AS updated_at
-FROM workspace.warehouse.fact_salary fs
-JOIN workspace.warehouse.dim_role r ON fs.role_sk = r.role_sk
-JOIN workspace.warehouse.dim_sector s ON fs.sector_sk = s.sector_sk
+FROM workspace.gold.fact_salary fs
+JOIN workspace.gold.dim_role r ON fs.role_sk = r.role_sk
+JOIN workspace.gold.dim_sector s ON fs.sector_sk = s.sector_sk
 WHERE fs.is_current = TRUE
 GROUP BY r.role_sk, r.role_name, s.sector_sk, s.sector_name;
 

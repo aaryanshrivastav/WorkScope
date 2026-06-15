@@ -15,8 +15,8 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 * **Bronze Layer:** 5 tables - Raw ingestion validation
 * **Silver Layer:** 6 tables - Cleansed data validation
-* **Semantic Layer:** 7 tables - Entity resolution validation
-* **Warehouse Layer:** 14 tables - Dimensional model validation
+* **Intermediate Layer: Entity resolution validation
+* **Gold Layer:** 14 tables - Dimensional model validation
 * **Gold Layer:** 19 tables - Business metric validation
 * **Quarantine Layer:** 1 table - Failed record management
 * **Audit Layer:** 3 tables - DQ monitoring
@@ -98,10 +98,10 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 2. **Bronze Validation:** Completeness, uniqueness, freshness checks
 3. **Silver Transformation:** Cleansing, normalization, deduplication
 4. **Silver Validation:** Business rules, referential integrity
-5. **Semantic Enrichment:** Entity resolution, classification
-6. **Semantic Validation:** Sector assignment, confidence scores
-7. **Warehouse Load:** Dimensional modeling
-8. **Warehouse Validation:** FK relationships, dimension integrity
+5. **Intermediate Enrichment:** Entity resolution, classification
+6. **Intermediate Validation:** Sector assignment, confidence scores
+7. **Gold Load:** Dimensional modeling
+8. **Gold Validation:** FK relationships, dimension integrity
 9. **Gold Aggregation:** Business metrics calculation
 10. **Gold Validation:** Metric consistency, completeness
 
@@ -120,8 +120,8 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 **Key Rules:**
 * BR_COMPL_001: Bronze job snapshot required fields
 * SV_COMPL_001: Silver jobs critical fields
-* SM_COMPL_001: Semantic sector map completeness
-* WH_COMPL_001-005: Warehouse dimension/fact completeness
+* SM_COMPL_001: Intermediate sector map completeness
+* WH_COMPL_001-005: Gold dimension/fact completeness
 * GD_COMPL_001-002: Gold aggregation completeness
 
 ### 2.2 Uniqueness Rules
@@ -135,8 +135,8 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 **Key Rules:**
 * BR_UNIQ_001-002: Bronze snapshot uniqueness
 * SV_UNIQ_001-003: Silver enterprise_job_id and mapping uniqueness
-* SM_UNIQ_001-003: Semantic canonical ID uniqueness
-* WH_UNIQ_001-005: Warehouse surrogate key uniqueness
+* SM_UNIQ_001-003: Intermediate canonical ID uniqueness
+* WH_UNIQ_001-005: Gold surrogate key uniqueness
 * GD_UNIQ_001: Gold mapping uniqueness
 
 ### 2.3 Freshness Rules
@@ -150,8 +150,8 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 **Key Rules:**
 * BR_FRESH_001: Bronze ingestion within 24 hours
 * SV_FRESH_001-002: Silver updates within 48 hours / 7 days
-* SM_FRESH_001: Semantic mapping recency
-* WH_FRESH_001: Warehouse load recency
+* SM_FRESH_001: Intermediate mapping recency
+* WH_FRESH_001: Gold load recency
 * GD_FRESH_001: Gold aggregation recency
 * AUDIT_FRESH_001: DQ validation execution recency
 
@@ -165,8 +165,8 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 **Key Rules:**
 * SV_REF_001: Silver to Bronze FK integrity
-* SM_REF_001-002: Semantic to Silver FK integrity
-* WH_REF_001-006: Warehouse fact-to-dimension FK integrity
+* SM_REF_001-002: Intermediate to Silver FK integrity
+* WH_REF_001-006: Gold fact-to-dimension FK integrity
 * QUAR_REF_001: Quarantine FK integrity check
 
 ### 2.5 Business Logic Rules
@@ -193,12 +193,12 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 * **Rule Count:** 9
 * **Severity:** ERROR for invalid codes, WARNING for missing/low confidence
-* **Action:** QUEUE_FOR_SEMANTIC_REVIEW or QUARANTINE
+* **Action:** QUEUE_FOR_INTERMEDIATE_REVIEW or QUARANTINE
 
 **Key Rules:**
 * SECT_001: Missing sector assignment
 * SECT_002: Low confidence sector assignment (<0.6)
-* SECT_003: Sector assignment without semantic mapping
+* SECT_003: Sector assignment without intermediate mapping
 * SECT_004: Invalid sector code
 * SECT_005: Missing assignment method
 * SECT_006-007: Valid normalization/taxonomy types
@@ -348,7 +348,7 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 **Description:** Flag records for manual review
 
-* **Target:** `workspace.silver.silver_semantic_review_queue`
+* **Target:** `workspace.silver.silver_intermediate_review_queue`
 * **Automated:** Yes
 * **Process:**
   1. Record flagged
@@ -358,15 +358,15 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 **Usage:** Suspicious but not invalid data (5 rules)
 
-### 4.5 QUEUE_FOR_SEMANTIC_REVIEW
+### 4.5 QUEUE_FOR_INTERMEDIATE_REVIEW
 
-**Description:** Queue for semantic layer review
+**Description:** Queue for intermediate layer review
 
-* **Target:** `workspace.silver.silver_semantic_review_queue`
+* **Target:** `workspace.silver.silver_intermediate_review_queue`
 * **Automated:** Yes
 * **Process:**
-  1. Missing or low-confidence semantic mapping detected
-  2. Job added to semantic review queue
+  1. Missing or low-confidence intermediate mapping detected
+  2. Job added to intermediate review queue
   3. ML/manual review triggered
   4. Mapping created/updated
 
@@ -424,18 +424,18 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 **Usage:** Monitoring metrics (1 rule)
 
-### 4.10 CREATE_SEMANTIC_MAPPING
+### 4.10 CREATE_INTERMEDIATE_MAPPING
 
-**Description:** Trigger semantic mapping creation
+**Description:** Trigger intermediate mapping creation
 
 * **Automated:** Yes
 * **Process:**
-  1. Missing semantic mapping detected
+  1. Missing intermediate mapping detected
   2. Mapping creation pipeline triggered
   3. Entity resolution performed
   4. Mapping record created
 
-**Usage:** Missing semantic mappings (1 rule)
+**Usage:** Missing intermediate mappings (1 rule)
 
 ---
 
@@ -500,17 +500,17 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 * **Description:** Processing staging area
 * **Validation Rules:** 0
 
-#### silver_semantic_review_queue
-* **Description:** Semantic review queue
+#### silver_intermediate_review_queue
+* **Description:** Intermediate review queue
 * **Validation Rules:** 0
 
 #### silver_skill_mapping
 * **Description:** Skill extraction results
 * **Validation Rules:** 1 (SV_COMPL_003)
 
-### 5.3 Semantic Layer Contract
+### 5.3 Intermediate Layer Contract
 
-**Schema:** `workspace.semantic`
+**Schema:** `workspace.intermediate`
 
 **Purpose:** Entity resolution and canonical mappings
 
@@ -549,9 +549,9 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 * **Description:** Skill relationship graph
 * **Validation Rules:** 0
 
-### 5.4 Warehouse Layer Contract
+### 5.4 Gold Layer Contract
 
-**Schema:** `workspace.warehouse`
+**Schema:** `workspace.gold`
 
 **Purpose:** Dimensional model for analytics
 
@@ -700,7 +700,7 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 #### role_review_queue
 * **Validation Rules:** 0
 
-#### semantic_review_audit
+#### intermediate_review_audit
 * **Validation Rules:** 0
 
 ### 5.6 Quarantine Layer Contract
@@ -754,17 +754,17 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 | SV_FRESH_001 | Freshness | silver_jobs_current | WARNING | ALERT | Active jobs updated <48h |
 | SV_FRESH_002 | Freshness | silver_jobs_current | ERROR | ALERT | Active jobs seen <7d |
 | SV_REF_001 | Referential Integrity | silver_jobs_current | ERROR | QUARANTINE | Valid bronze source reference |
-| **SEMANTIC LAYER** |
+| **INTERMEDIATE LAYER** |
 | SM_COMPL_001 | Completeness | sem_sector_map | ERROR | QUARANTINE | Sector map complete |
 | SM_COMPL_002 | Completeness | sem_company_canonical | ERROR | QUARANTINE | Canonical company complete |
 | SM_COMPL_003 | Completeness | sem_skill_catalog | ERROR | QUARANTINE | Skill catalog complete |
 | SM_UNIQ_001 | Uniqueness | sem_company_canonical | ERROR | QUARANTINE | Unique canonical_company_id |
 | SM_UNIQ_002 | Uniqueness | sem_skill_catalog | ERROR | QUARANTINE | Unique canonical_skill_id |
 | SM_UNIQ_003 | Uniqueness | sem_sector_map | ERROR | QUARANTINE | Unique sector_map_id |
-| SM_FRESH_001 | Freshness | sem_sector_map | WARNING | LOG_WARNING | Recent semantic mappings |
+| SM_FRESH_001 | Freshness | sem_sector_map | WARNING | LOG_WARNING | Recent intermediate mappings |
 | SM_REF_001 | Referential Integrity | sem_sector_map | ERROR | QUARANTINE | Valid silver job reference |
 | SM_REF_002 | Referential Integrity | sem_company_map | ERROR | QUARANTINE | Valid silver job reference |
-| **WAREHOUSE LAYER** |
+| **GOLD LAYER** |
 | WH_COMPL_001 | Completeness | dim_company | ERROR | QUARANTINE | Company dimension complete |
 | WH_COMPL_002 | Completeness | dim_location | ERROR | QUARANTINE | Location dimension complete |
 | WH_COMPL_003 | Completeness | dim_sector | ERROR | QUARANTINE | Sector dimension complete |
@@ -775,7 +775,7 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 | WH_UNIQ_003 | Uniqueness | dim_sector | ERROR | QUARANTINE | Unique sector_sk |
 | WH_UNIQ_004 | Uniqueness | dim_skill | ERROR | QUARANTINE | Unique skill_sk |
 | WH_UNIQ_005 | Uniqueness | fact_salary | ERROR | QUARANTINE | Unique fact_salary_sk |
-| WH_FRESH_001 | Freshness | fact_job_postings | WARNING | ALERT | Warehouse load <24h |
+| WH_FRESH_001 | Freshness | fact_job_postings | WARNING | ALERT | Gold load <24h |
 | WH_REF_001 | Referential Integrity | fact_job_postings | ERROR | QUARANTINE | Valid dim_job FK |
 | WH_REF_002 | Referential Integrity | fact_job_postings | ERROR | QUARANTINE | Valid dim_company FK |
 | WH_REF_003 | Referential Integrity | fact_job_postings | ERROR | QUARANTINE | Valid dim_location FK |
@@ -800,9 +800,9 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 | BIZ_010 | Business Logic | quarantine_jobs | ERROR | ALERT | Valid quarantine severity |
 | BIZ_011 | Business Logic | quarantine_jobs | ERROR | ALERT | Valid reprocess status |
 | **SECTOR CLASSIFICATION** |
-| SECT_001 | Sector Classification | silver_jobs_current | WARNING | QUEUE_FOR_SEMANTIC_REVIEW | Missing sector assignment |
-| SECT_002 | Sector Classification | silver_jobs_current | WARNING | QUEUE_FOR_SEMANTIC_REVIEW | Low confidence sector |
-| SECT_003 | Sector Classification | silver_jobs_current | ERROR | CREATE_SEMANTIC_MAPPING | Sector without mapping |
+| SECT_001 | Sector Classification | silver_jobs_current | WARNING | QUEUE_FOR_INTERMEDIATE_REVIEW | Missing sector assignment |
+| SECT_002 | Sector Classification | silver_jobs_current | WARNING | QUEUE_FOR_INTERMEDIATE_REVIEW | Low confidence sector |
+| SECT_003 | Sector Classification | silver_jobs_current | ERROR | CREATE_INTERMEDIATE_MAPPING | Sector without mapping |
 | SECT_004 | Sector Classification | sem_sector_map | ERROR | QUARANTINE | Invalid sector code |
 | SECT_005 | Sector Classification | silver_jobs_current | WARNING | LOG_WARNING | Missing assignment method |
 | SECT_006 | Sector Classification | sem_sector_map | WARNING | LOG_WARNING | Valid normalization method |
@@ -958,7 +958,7 @@ for validation_file in validation_files:
             "task_key": "validate",
             "sql_task": {
                 "file": {"path": f"/sql/validations/{validation_file}"},
-                "warehouse_id": "<warehouse_id>"
+                "gold_warehouse_id": "<warehouse_id>"
             }
         }],
         schedule={"quartz_cron_expression": "0 0 * * * ?"}  # Daily
@@ -1102,12 +1102,12 @@ ORDER BY quarantined_count DESC
 * Completeness: >98% for critical fields
 * Uniqueness: 100% for enterprise_job_id
 
-**Semantic Layer SLA:**
+**Intermediate Layer SLA:**
 * Freshness: <48 hours for new mappings
 * Completeness: >95% sector assignment
 * Confidence: >80% high-confidence mappings
 
-**Warehouse Layer SLA:**
+**Gold Layer SLA:**
 * Freshness: <24 hours for fact loads
 * Referential Integrity: 100% compliance
 * Geocoding: >90% coverage
@@ -1145,8 +1145,8 @@ LMIP/
 
 * **Bronze Layer:** Immutable raw data ingestion layer
 * **Silver Layer:** Cleansed and conformed data layer
-* **Semantic Layer:** Entity resolution and canonical mapping layer
-* **Warehouse Layer:** Dimensional model for analytics
+* **Intermediate Layer: Entity resolution and canonical mapping layer
+* **Gold Layer:** Dimensional model for analytics
 * **Gold Layer:** Business-level aggregations and metrics
 * **Quarantine:** Isolated storage for failed validation records
 * **Audit:** Monitoring and tracking layer for DQ results

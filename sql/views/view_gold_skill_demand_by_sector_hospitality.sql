@@ -18,7 +18,7 @@ SELECT
   gsds.growth_rate,
   gsds.updated_at
 FROM workspace.gold.gold_skill_demand_by_sector gsds
-INNER JOIN workspace.warehouse.dim_sector s ON gsds.sector_sk = s.sector_sk
+INNER JOIN workspace.gold.dim_sector s ON gsds.sector_sk = s.sector_sk
 WHERE s.sector_name IN ('Hospitality', 'Hotels & Resorts', 'Restaurants', 'Food & Beverage')
    OR s.sector_family = 'Hospitality';
 

@@ -27,8 +27,8 @@ This runbook provides monitoring procedures, alert definitions, and troubleshoot
 |----------|----------------|-------------|-----|
 | Daily_Ingestion | 20-30 min | 2 hours | <2 hours |
 | Silver_Processing | 45-60 min | 3 hours | <3 hours |
-| Semantic_Processing | 60-90 min | 4 hours | <4 hours |
-| Warehouse_Build | 2-3 hours | 5 hours | <5 hours |
+| Intermediate_Processing | 60-90 min | 4 hours | <4 hours |
+| Gold_Build | 2-3 hours | 5 hours | <5 hours |
 | Gold_Build | 2-3 hours | 4 hours | <4 hours |
 | Publishing | 1-2 hours | 3 hours | <3 hours |
 | **End-to-End** | 6-9 hours | 12 hours | <12 hours |
@@ -39,7 +39,7 @@ This runbook provides monitoring procedures, alert definitions, and troubleshoot
 |-------|-----|----------------|
 | Bronze | <24 hours | >30 hours |
 | Silver | <25 hours | >32 hours |
-| Warehouse | <28 hours | >36 hours |
+| Gold | <28 hours | >36 hours |
 | Gold | <30 hours | >40 hours |
 | Published (Supabase) | <32 hours | >48 hours |
 
@@ -95,10 +95,10 @@ SELECT
 FROM silver.silver_jobs_current
 UNION ALL
 SELECT 
-  'warehouse',
+  'gold',
   MAX(posting_timestamp),
   ROUND(TIMESTAMPDIFF(HOUR, MAX(posting_timestamp), CURRENT_TIMESTAMP()), 2)
-FROM warehouse.fact_job_postings
+FROM gold.fact_job_postings
 UNION ALL
 SELECT 
   'gold',
@@ -214,7 +214,7 @@ WHERE end_time >= CURRENT_TIMESTAMP() - INTERVAL 2 HOURS
   AND (
     (pipeline_name = 'LMIP_Daily_Ingestion' AND TIMESTAMPDIFF(MINUTE, start_time, end_time) > 45) OR
     (pipeline_name = 'LMIP_Silver_Processing' AND TIMESTAMPDIFF(MINUTE, start_time, end_time) > 90) OR
-    (pipeline_name = 'LMIP_Warehouse_Build' AND TIMESTAMPDIFF(MINUTE, start_time, end_time) > 270)
+    (pipeline_name = 'LMIP_Gold_Build' AND TIMESTAMPDIFF(MINUTE, start_time, end_time) > 270)
   );
 ```
 
@@ -423,7 +423,7 @@ LIMIT 10;
 ```sql
 EXPLAIN EXTENDED
 SELECT ...
-FROM warehouse.fact_job_postings
+FROM gold.fact_job_postings
 WHERE posting_timestamp >= '2026-06-01';
 
 -- Look for: Full table scans, shuffle operations
@@ -431,7 +431,7 @@ WHERE posting_timestamp >= '2026-06-01';
 
 2. Check table statistics
 ```sql
-DESCRIBE DETAIL warehouse.fact_job_postings;
+DESCRIBE DETAIL gold.fact_job_postings;
 
 -- Check: numFiles, sizeInBytes
 -- Alert if: numFiles >10K (small file problem)
@@ -441,18 +441,18 @@ DESCRIBE DETAIL warehouse.fact_job_postings;
 ```sql
 -- Verify partition column in WHERE clause
 SELECT COUNT(*)
-FROM warehouse.fact_job_postings
+FROM gold.fact_job_postings
 WHERE posting_timestamp >= '2026-06-01';  -- Good: uses partition
 
 SELECT COUNT(*)
-FROM warehouse.fact_job_postings
+FROM gold.fact_job_postings
 WHERE job_sk = 12345;  -- Bad: full scan
 ```
 
 **Resolution**:
 * If small files: Run OPTIMIZE on affected tables
 ```sql
-OPTIMIZE warehouse.fact_job_postings ZORDER BY (sector_sk, company_sk);
+OPTIMIZE gold.fact_job_postings ZORDER BY (sector_sk, company_sk);
 ```
 * If missing partition filter: Update query to include date filter
 * If large shuffle: Use broadcast joins for small dimensions
@@ -533,8 +533,8 @@ Perform every Monday morning:
 -- Optimize high-traffic tables
 OPTIMIZE bronze.bronze_job_snapshot ZORDER BY (source_name, ingestion_date);
 OPTIMIZE silver.silver_jobs_current ZORDER BY (updated_at, source_name);
-OPTIMIZE warehouse.fact_job_postings ZORDER BY (posting_timestamp, sector_sk);
-OPTIMIZE warehouse.fact_salary ZORDER BY (observation_date_sk, sector_sk, role_sk);
+OPTIMIZE gold.fact_job_postings ZORDER BY (posting_timestamp, sector_sk);
+OPTIMIZE gold.fact_salary ZORDER BY (observation_date_sk, sector_sk, role_sk);
 OPTIMIZE gold.gold_salary_trends ZORDER BY (salary_date_sk, sector_sk);
 ```
 
@@ -575,8 +575,8 @@ Perform first Monday of each month:
 -- Remove old Delta versions (retain 30 days for time travel)
 VACUUM bronze.bronze_job_snapshot RETAIN 720 HOURS;  -- 30 days
 VACUUM silver.silver_jobs_current RETAIN 720 HOURS;
-VACUUM warehouse.fact_job_postings RETAIN 720 HOURS;
-VACUUM warehouse.fact_salary RETAIN 720 HOURS;
+VACUUM gold.fact_job_postings RETAIN 720 HOURS;
+VACUUM gold.fact_salary RETAIN 720 HOURS;
 VACUUM gold.gold_salary_trends RETAIN 720 HOURS;
 ```
 

@@ -25,10 +25,14 @@ class TestQuarantineRules:
             ("job_004", "Acme Corp", "Developer", None, True),         # Missing description
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "description", "should_quarantine"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True),
+            StructField("should_quarantine", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Apply quarantine rule: flag if any required field is NULL
         df_flagged = df.withColumn(
@@ -55,10 +59,14 @@ class TestQuarantineRules:
             ("job_003", "Acme", "", "Desc", True),      # Empty title
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "description", "should_quarantine"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True),
+            StructField("should_quarantine", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Flag if NULL OR empty string
         df_flagged = df.withColumn(
@@ -89,10 +97,12 @@ class TestQuarantineRules:
             ("job_003", past_date, True),      # Too old (>1 year)
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "posted_at", "should_quarantine"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("posted_at", TimestampType(), True),
+            StructField("should_quarantine", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         current_date = datetime(2026, 6, 7)
         min_valid_date = datetime(2025, 6, 7)  # 1 year ago
@@ -122,10 +132,13 @@ class TestQuarantineRules:
             ("job_004", "Developer", "a" * 10000, True),                            # Too long
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "title", "description", "should_quarantine"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True),
+            StructField("should_quarantine", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Flag spam patterns
         df_flagged = df.withColumn(
@@ -160,10 +173,14 @@ class TestQuarantineCategories:
             ("job_003", "Acme", "Dev", "Desc", None),  # Valid - no quarantine
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "description", "expected_reason"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True),
+            StructField("expected_reason", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Determine quarantine reason
         df_categorized = df.withColumn(
@@ -185,10 +202,13 @@ class TestQuarantineCategories:
             ("job_001", None, "Spam!!!", "Both missing company and spam title"),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "description"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Priority: MISSING_REQUIRED_FIELD > SUSPICIOUS_CONTENT
         df_categorized = df.withColumn(
@@ -213,11 +233,16 @@ class TestQuarantineActions:
             ("job_001", "Acme", "Dev", "Desc", False, None, None),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "description", "is_quarantined", 
-             "quarantine_reason", "quarantined_at"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True),
+            StructField("is_quarantined", BooleanType(), True),
+            StructField("quarantine_reason", StringType(), True),
+            StructField("quarantined_at", TimestampType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Simulate quarantine action
         current_time = datetime(2026, 6, 7, 10, 0, 0)
@@ -238,10 +263,13 @@ class TestQuarantineActions:
             ("job_001", True, "MISSING_REQUIRED_FIELD", datetime(2026, 6, 7)),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "is_quarantined", "quarantine_reason", "quarantined_at"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("is_quarantined", BooleanType(), True),
+            StructField("quarantine_reason", StringType(), True),
+            StructField("quarantined_at", TimestampType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Release from quarantine
         df_released = df.withColumn("is_quarantined", F.lit(False)) \
@@ -260,10 +288,14 @@ class TestQuarantineActions:
             ("job_001", None, "Developer", True, "MISSING_REQUIRED_FIELD"),  # Original: missing company
         ]
         
-        df_quarantined = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "is_quarantined", "quarantine_reason"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("is_quarantined", BooleanType(), True),
+            StructField("quarantine_reason", StringType(), True)
+        ])
+        df_quarantined = spark.createDataFrame(data, schema)
         
         # Simulate fix: company name added
         df_fixed = df_quarantined.withColumn("company", F.lit("Acme Corp"))
@@ -292,14 +324,15 @@ class TestQuarantineReporting:
             ("job_004", "INVALID_DATE"),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "quarantine_reason"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("quarantine_reason", StringType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         counts = df.groupBy("quarantine_reason").count().collect()
         
-        reason_counts = {row.quarantine_reason: row.count for row in counts}
+        reason_counts = {row.quarantine_reason: row['count'] for row in counts}
         
         assert reason_counts["MISSING_REQUIRED_FIELD"] == 2
         assert reason_counts["SUSPICIOUS_CONTENT"] == 1
@@ -315,10 +348,12 @@ class TestQuarantineReporting:
             ("job_003", datetime(2026, 5, 1), 37),  # 37 days old
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "quarantined_at", "expected_age_days"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("quarantined_at", TimestampType(), True),
+            StructField("expected_age_days", IntegerType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         df_with_age = df.withColumn(
             "age_days",
@@ -342,10 +377,12 @@ class TestQuarantineReporting:
             ("job_003", datetime(2025, 12, 1), True),   # 6 months - delete
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "quarantined_at", "should_delete"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("quarantined_at", TimestampType(), True),
+            StructField("should_delete", BooleanType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         df_with_deletion = df.withColumn(
             "mark_for_deletion",
@@ -371,10 +408,13 @@ class TestQuarantineWorkflow:
             ("job_003", "TechCo", "Spam!!!", "Click now!!!"),        # Invalid
         ]
         
-        df_raw = spark.createDataFrame(
-            raw_data,
-            ["job_id", "company", "title", "description"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True)
+        ])
+        df_raw = spark.createDataFrame(raw_data, schema)
         
         # Validate and route
         df_validated = df_raw.withColumn(
@@ -409,10 +449,15 @@ class TestQuarantineWorkflow:
              "pending_review"),
         ]
         
-        df_quarantine = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "is_quarantined", "quarantine_reason", "review_status"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("is_quarantined", BooleanType(), True),
+            StructField("quarantine_reason", StringType(), True),
+            StructField("review_status", StringType(), True)
+        ])
+        df_quarantine = spark.createDataFrame(data, schema)
         
         # Step 1: Mark as under review
         df_reviewing = df_quarantine.withColumn("review_status", F.lit("under_review"))
@@ -451,10 +496,13 @@ class TestQuarantineEdgeCases:
             ("job_001", True, "MISSING_REQUIRED_FIELD", datetime(2026, 6, 1)),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "is_quarantined", "quarantine_reason", "quarantined_at"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("is_quarantined", BooleanType(), True),
+            StructField("quarantine_reason", StringType(), True),
+            StructField("quarantined_at", TimestampType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Check if already quarantined before re-quarantine
         df_check = df.withColumn(
@@ -474,10 +522,14 @@ class TestQuarantineEdgeCases:
              "Looking for experienced Python developer", datetime(2026, 6, 1)),
         ]
         
-        df = spark.createDataFrame(
-            data,
-            ["job_id", "company", "title", "description", "posted_at"]
-        )
+        schema = StructType([
+            StructField("job_id", StringType(), True),
+            StructField("company", StringType(), True),
+            StructField("title", StringType(), True),
+            StructField("description", StringType(), True),
+            StructField("posted_at", TimestampType(), True)
+        ])
+        df = spark.createDataFrame(data, schema)
         
         # Apply all quarantine rules
         df_evaluated = df.withColumn(

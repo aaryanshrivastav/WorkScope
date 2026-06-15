@@ -11,9 +11,9 @@
 LMIP uses **7 Databricks Workflows** orchestrated via file-arrival triggers to implement an end-to-end data pipeline:
 1. Daily_Ingestion (periodic trigger, daily)
 2. Silver_Processing (file trigger)
-3. Semantic_Processing (file trigger)
-4. Warehouse_Build (file trigger)
-5. Gold_Build (file trigger)
+3. Intermediate_Processing (file trigger)
+4. Gold_Build (file trigger)
+5. Reporting_Build (file trigger)
 6. Publishing (file trigger)
 7. Recovery (manual, PAUSED)
 
@@ -113,9 +113,9 @@ Silver_Job_Identity_Map (cross-source dedup)
 
 ---
 
-## Workflow 3: LMIP_Semantic_Processing
+## Workflow 3: LMIP_Intermediate_Processing
 
-**Purpose**: Enrich silver data with canonical entities and semantic mappings
+**Purpose**: Enrich silver data with canonical entities and intermediate enrichments
 
 **Trigger**: File arrival after silver processing complete
 
@@ -125,21 +125,21 @@ Silver_Job_Identity_Map (cross-source dedup)
 ```
       ┌─────────────────────┴─────────────────────┐
       │ (parallel)                              │
-Semantic_Role_Map                  Semantic_Company_Canonicalize
+Intermediate_Role_Map                  Intermediate_Company_Canonicalize
 (title → canonical role)          (company → master entity)
       │                                      │
       └─────────────────┬──────────────────┘
                       ↓
-        Semantic_Sector_Normalize
+        Intermediate_Sector_Normalize
         (normalize sector assignments)
                       ↓
-        Semantic_Skill_Catalog_Sync
+        Intermediate_Skill_Catalog_Sync
         (sync skills to master catalog)
                       ↓
-        Semantic_Skill_Graph_Build
+        Intermediate_Skill_Graph_Build
         (build co-occurrence graph)
                       ↓
-        Semantic_Review_Resolver (runs even if upstream fails)
+        Intermediate_Review_Resolver (runs even if upstream fails)
         (process low-confidence review queue)
 ```
 
@@ -147,15 +147,15 @@ Semantic_Role_Map                  Semantic_Company_Canonicalize
 1. **Role Mapping**: Dictionary → Regex → LLM fallback (optional)
 2. **Company Canonicalization**: Exact → Alias → Fuzzy match (Levenshtein threshold 0.85)
 3. **Sector Normalization**: Rule-based mapping to master taxonomy
-4. **Skill Catalog Sync**: Add new skills to `semantic.sem_skill_catalog`
+4. **Skill Catalog Sync**: Add new skills to `intermediate.skill_catalog`
 5. **Skill Graph**: Build co-occurrence matrix and hierarchies
 
 **Outputs**:
-* `semantic.sem_job_role_map`
-* `semantic.sem_company_map`
-* `semantic.sem_sector_map`
-* `semantic.sem_skill_catalog`
-* `semantic.sem_skill_graph`
+* `intermediate.job_role_map`
+* `intermediate.company_map`
+* `intermediate.sector_map`
+* `intermediate.skill_catalog`
+* `intermediate.skill_graph`
 
 **Confidence Thresholds**:
 * High confidence (≥0.85): Auto-process
@@ -169,11 +169,11 @@ Semantic_Role_Map                  Semantic_Company_Canonicalize
 
 ---
 
-## Workflow 4: LMIP_Warehouse_Build
+## Workflow 4: LMIP_Gold_Build
 
-**Purpose**: Build dimensional star schema warehouse model
+**Purpose**: Build dimensional star schema (gold layer) model
 
-**Trigger**: File arrival after semantic processing complete
+**Trigger**: File arrival after intermediate processing complete
 
 **Duration**: 2-3 hours
 
@@ -223,11 +223,11 @@ Phase 5: Fact Tables (parallel)
 
 ---
 
-## Workflow 5: LMIP_Gold_Build
+## Workflow 5: LMIP_Reporting_Build
 
-**Purpose**: Pre-aggregate business intelligence marts for dashboard consumption
+**Purpose**: Pre-aggregate business intelligence marts for analytics for dashboard consumption
 
-**Trigger**: File arrival after warehouse build complete
+**Trigger**: File arrival after gold build complete
 
 **Duration**: 2-3 hours
 
@@ -235,14 +235,14 @@ Phase 5: Fact Tables (parallel)
 
 ```
 Phase 1: Core Analytics (parallel)
-  Gold_Salary_Trends | Gold_Skill_Demand | Gold_Hiring_Trends | 
-  Gold_Company_Hiring | Gold_Location_Trends | Gold_Sector_Overview
+  Reporting_Salary_Trends | Reporting_Skill_Demand | Reporting_Hiring_Trends | 
+  Reporting_Company_Hiring | Reporting_Location_Trends | Reporting_Sector_Overview
                       ↓
 Phase 2: Operational Monitoring
-              Gold_Pipeline_Health (runs even if upstream fails)
+              Reporting_Pipeline_Health (runs even if upstream fails)
                       ↓
 Phase 3: Industry-Specific (parallel)
-  Gold_Company_Activity | Gold_Hiring_Activity | Gold_Skill_Demand_By_Sector
+  Reporting_Company_Activity | Reporting_Hiring_Activity | Reporting_Skill_Demand_By_Sector
 ```
 
 **Key Operations**:
@@ -326,9 +326,9 @@ Recovery_Silver_Reprocess (full reprocess mode)
               ↓
 Recovery_CDC_Reprocess (recalculate CDC)
               ↓
-Recovery_Semantic_Reprocess (re-run semantic enrichment)
+Recovery_Intermediate_Reprocess (re-run intermediate enrichment)
               ↓
-Recovery_Warehouse_Rebuild (full refresh)
+Recovery_Gold_Rebuild (full refresh)
               ↓
 Recovery_Validation_Report (always runs, generates summary)
 ```
@@ -355,9 +355,9 @@ Workflows trigger each other via empty marker files:
 | Trigger File Path | Triggered Workflow |
 |-------------------|--------------------|
 | `dbfs:/databricks/workflows/triggers/bronze_batch_complete` | LMIP_Silver_Processing |
-| `dbfs:/databricks/workflows/triggers/silver_processing_complete` | LMIP_Semantic_Processing |
-| `dbfs:/databricks/workflows/triggers/semantic_processing_complete` | LMIP_Warehouse_Build |
-| `dbfs:/databricks/workflows/triggers/warehouse_build_complete` | LMIP_Gold_Build |
+| `dbfs:/databricks/workflows/triggers/silver_processing_complete` | LMIP_Intermediate_Processing |
+| `dbfs:/databricks/workflows/triggers/inter_processing_complete` | LMIP_Gold_Build |
+| `dbfs:/databricks/workflows/triggers/gold_build_complete` | LMIP_Reporting_Build |
 | `dbfs:/databricks/workflows/triggers/gold_build_complete` | LMIP_Publishing |
 
 **Implementation**:
@@ -380,8 +380,8 @@ dbutils.fs.put(
 |----------|----------------|-------------|---------------|
 | Daily_Ingestion | 20-30 min | 2 hours | Bronze writes |
 | Silver_Processing | 45-60 min | 3 hours | CDC + Identity mapping |
-| Semantic_Processing | 60-90 min | 4 hours | Skill graph build |
-| Warehouse_Build | 2-3 hours | 5 hours | Dim_Job_SCD2 + Facts |
+| Intermediate_Processing | 60-90 min | 4 hours | Skill graph build |
+| Gold_Build | 2-3 hours | 5 hours | Dim_Job_SCD2 + Facts |
 | Gold_Build | 2-3 hours | 4 hours | Core analytics |
 | Publishing | 1-2 hours | 3 hours | CSV export + Supabase sync |
 | Recovery | 3-6 hours | 6 hours | Full pipeline reprocess |
@@ -399,9 +399,9 @@ dbutils.fs.put(
 | **Ingestion (API)** | 2 | 30s | Yes |
 | **Bronze** | 1-2 | 60s | No |
 | **Silver** | 2 | 60s | No |
-| **Semantic** | 2 | 120s | No (LLM timeouts) |
-| **Warehouse** | 2 | Standard | No |
-| **Gold** | 2 | 120s | No |
+| **Intermediate** | 2 | 120s | No (LLM timeouts) |
+| **Gold** | 2 | Standard | No |
+| **Reporting** | 2 | 120s | No |
 | **Publishing** | 3 | 180s | Yes (Supabase only) |
 | **Recovery** | 1-2 | Standard | No |
 
@@ -409,7 +409,7 @@ dbutils.fs.put(
 
 **Email Alerts**:
 * **Daily_Ingestion**: on_failure only
-* **Silver/Semantic/Warehouse/Gold**: on_failure only
+* **Silver/Intermediate/Gold/Reporting**: on_failure only
 * **Publishing**: on_success AND on_failure
 * **Recovery**: on_start, on_success, AND on_failure
 
@@ -525,7 +525,7 @@ dbutils.fs.put(
 
 ### Issue 4: Out-of-Order Execution
 
-**Symptom**: Warehouse build starts before semantic processing completes
+**Symptom**: Gold build starts before intermediate processing completes
 
 **Root Cause**: Trigger file written prematurely
 

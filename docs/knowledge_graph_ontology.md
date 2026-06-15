@@ -34,7 +34,7 @@ Represents industry sectors and subsectors.
 * `keywords` (array<string>): Keywords for sector matching
 * `is_active` (boolean): Whether sector is actively tracked
 
-**Source**: `metadata/sectors.csv` → `warehouse.dim_sector`
+**Source**: `metadata/sectors.csv` → `gold.dim_sector`
 
 **Example**:
 ```json
@@ -84,7 +84,7 @@ Standardized job role definition.
 * `aliases` (array<string>): Alternative names for matching
 * `is_active` (boolean): Whether role is actively tracked
 
-**Source**: `metadata/canonical_roles.csv` → `warehouse.dim_role`
+**Source**: `metadata/canonical_roles.csv` → `gold.dim_role`
 
 **Example**:
 ```json
@@ -114,7 +114,7 @@ Standardized skill definition.
 * `aliases` (array<string>): Alternative names for matching
 * `is_active` (boolean): Whether skill is actively tracked
 
-**Source**: `metadata/canonical_skills.csv` → `warehouse.dim_skill`
+**Source**: `metadata/canonical_skills.csv` → `gold.dim_skill`
 
 **Example**:
 ```json
@@ -141,7 +141,7 @@ Employer entity.
 * `headquarters_location` (string): HQ location
 * `is_active` (boolean): Whether company is actively hiring
 
-**Source**: `warehouse.dim_company`
+**Source**: `gold.dim_company`
 
 **Example**:
 ```json
@@ -169,7 +169,7 @@ Individual job posting instance.
 * `is_remote` (boolean): Remote work option
 * `is_active` (boolean): Whether posting is still open
 
-**Source**: `warehouse.fact_job_postings`
+**Source**: `gold.fact_job_postings`
 
 **Example**:
 ```json
@@ -366,11 +366,11 @@ RETURN path
 ### Phase 1: Core Taxonomy (Current)
 * ✅ Define node types and properties
 * ✅ Build metadata foundation (sectors, roles, skills)
-* ✅ Refactor semantic layer to use metadata
-* ✅ Update warehouse dimensions
+* ✅ Refactor intermediate layer to use metadata
+* ✅ Update gold dimensions
 
 ### Phase 2: Graph Construction
-* Load nodes from warehouse dimensions
+* Load nodes from gold dimensions
 * Build BELONGS_TO and CONTAINS edges from taxonomy
 * Build REQUIRES edges from job posting analysis
 * Build HIRES_FOR and OPERATES_IN edges from company data
@@ -397,10 +397,10 @@ RETURN path
 
 ```
 metadata/*.csv
-  ↓ (loaded by semantic notebooks)
-semantic.sem_*
-  ↓ (transformed by warehouse notebooks)
-warehouse.dim_*
+  ↓ (loaded by intermediate notebooks)
+intermediate.*
+  ↓ (transformed by gold notebooks)
+gold.dim_*
   ↓ (exported for graph construction)
 Graph Database (Neo4j/TigerGraph)
   ↓ (queried for insights)
@@ -419,5 +419,5 @@ Dashboards & Applications
 ## See Also
 
 * [Metadata README](../metadata/README_METADATA.md) - Source taxonomy definitions
-* [metadata_loader notebook](../notebooks/semantic/metadata_loader.ipynb) - How metadata is loaded
-* [Warehouse dimension notebooks](../notebooks/warehouse/) - Graph node sources
+* [metadata_loader notebook](../notebooks/intermediate/metadata_loader.ipynb) - How metadata is loaded
+* [Gold dimension notebooks](../notebooks/gold/) - Graph node sources

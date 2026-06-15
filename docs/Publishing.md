@@ -113,8 +113,8 @@ Publish_Supabase_Upsert
     ...
   ],
   "dependencies": [
-    "workspace.warehouse.dim_date",
-    "workspace.warehouse.dim_sector"
+    "workspace.gold.dim_date",
+    "workspace.gold.dim_sector"
   ]
 }
 ```
