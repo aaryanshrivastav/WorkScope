@@ -40,13 +40,10 @@ from typing import List, Optional, Set
 from datetime import datetime, timezone
 import os
 from dotenv import load_dotenv
-from databricks.sdk import WorkspaceClient
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
 from rich.prompt import Confirm
 
-console = Console()
+from core import DatabricksClientWrapper, SQLExecutor, DeploymentLogger
+
 load_dotenv()
 
 
@@ -97,11 +94,16 @@ class EnvironmentResetter:
             dry_run: If True, preview changes without executing
         """
         self.catalog = catalog
-        self.client = WorkspaceClient(
-            host=os.getenv("DATABRICKS_HOST"),
-            token=os.getenv("DATABRICKS_TOKEN")
-        )
         self.dry_run = dry_run
+        
+        # Initialize core utilities
+        self.db = DatabricksClientWrapper()
+        self.executor = SQLExecutor(
+            client=self.db.client,
+            warehouse_id=self.db.warehouse_id,
+            catalog=catalog
+        )
+        self.logger = DeploymentLogger()
         
         # Track results
         self.results = {
@@ -112,19 +114,14 @@ class EnvironmentResetter:
     
     def print_banner(self):
         """Print warning banner"""
-        banner = """
-[bold red]╔══════════════════════════════════════════════════════════╗
-║                                                          ║
-║           ⚠️  ENVIRONMENT RESET UTILITY                  ║
-║                                                          ║
-║  WARNING: This operation DELETES data permanently!       ║
-║                                                          ║
-╚══════════════════════════════════════════════════════════╝[/bold red]
-"""
-        console.print(banner)
-        console.print(f"[bold]Target Catalog:[/bold] {self.catalog}")
-        console.print(f"[bold]Dry Run:[/bold] {self.dry_run}")
-        console.print(f"[bold]Timestamp:[/bold] {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+        self.logger.panel(
+            "⚠️  WARNING: This operation DELETES data permanently!",
+            title="ENVIRONMENT RESET UTILITY",
+            style="error"
+        )
+        self.logger.info(f"Target Catalog: {self.catalog}")
+        self.logger.info(f"Dry Run: {self.dry_run}")
+        self.logger.info(f"Timestamp: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
     
     def _resolve_layers(self, layers: List[str]) -> Set[str]:
         """Resolve layer names to schema names (supports aliases)"""
@@ -138,38 +135,18 @@ class EnvironmentResetter:
                 schemas.add(layer_lower)
         return schemas
     
-    def _get_schema_tables(self, schema: str) -> List[str]:
-        """Get list of tables in a schema"""
-        try:
-            tables = self.client.tables.list(
-                catalog_name=self.catalog,
-                schema_name=schema
-            )
-            return [table.name for table in tables]
-        except Exception as e:
-            console.print(f"[yellow]⚠️  Could not list tables in {schema}: {e}[/yellow]")
-            return []
-    
-    def _schema_exists(self, schema: str) -> bool:
-        """Check if schema exists"""
-        try:
-            self.client.schemas.get(f"{self.catalog}.{schema}")
-            return True
-        except Exception:
-            return False
-    
     def drop_tables_in_schema(self, schema: str) -> bool:
         """Drop all tables in a schema (keep the schema)"""
-        console.print(f"\n[bold yellow]Dropping tables in {schema}...[/bold yellow]")
+        self.logger.warning(f"\nDropping tables in {schema}...")
         
-        if not self._schema_exists(schema):
-            console.print(f"[yellow]⚠️  Schema {schema} does not exist, skipping[/yellow]")
+        if not self.db.schema_exists(self.catalog, schema):
+            self.logger.item_warning(f"Schema {schema} does not exist, skipping")
             return True
         
-        tables = self._get_schema_tables(schema)
+        tables = self.db.list_tables(self.catalog, schema)
         
         if not tables:
-            console.print(f"[dim]  No tables found in {schema}[/dim]")
+            self.logger.info(f"  No tables found in {schema}")
             return True
         
         success = True
@@ -178,26 +155,18 @@ class EnvironmentResetter:
             
             try:
                 if self.dry_run:
-                    console.print(f"[blue]🔍[/blue]   Would drop: {full_table_name}")
+                    self.logger.info(f"🔍   Would drop: {full_table_name}")
                     continue
                 
-                # Drop table
-                result = self.client.statement_execution.execute_statement(
-                    warehouse_id=self._get_warehouse_id(),
-                    statement=f"DROP TABLE IF EXISTS {full_table_name}",
-                    catalog=self.catalog,
-                    wait_timeout="0s"
-                )
+                # Use SQLExecutor to drop table
+                self.executor.drop_table(schema, table)
                 
-                if result.status.state.value == "SUCCEEDED":
-                    self.results["tables_dropped"].append(full_table_name)
-                    console.print(f"[green]✓[/green]   Dropped: {full_table_name}")
-                else:
-                    raise Exception(f"Drop failed: {result.status.state}")
+                self.results["tables_dropped"].append(full_table_name)
+                self.logger.item_success(f"Dropped: {full_table_name}")
                     
             except Exception as e:
                 self.results["failed"].append((full_table_name, str(e)))
-                console.print(f"[red]✗[/red]   Failed to drop {full_table_name}: {str(e)[:50]}")
+                self.logger.item_error(f"Failed to drop {full_table_name}: {str(e)[:50]}")
                 success = False
         
         return success
@@ -206,63 +175,53 @@ class EnvironmentResetter:
         """Drop a schema (with or without CASCADE)"""
         full_schema_name = f"{self.catalog}.{schema}"
         
-        if not self._schema_exists(schema):
-            console.print(f"[yellow]⚠️  Schema {schema} does not exist, skipping[/yellow]")
+        if not self.db.schema_exists(self.catalog, schema):
+            self.logger.item_warning(f"Schema {schema} does not exist, skipping")
             return True
         
         try:
-            cascade_clause = "CASCADE" if cascade else "RESTRICT"
-            
             if self.dry_run:
-                console.print(f"[blue]🔍[/blue] Would drop schema: {full_schema_name} {cascade_clause}")
+                self.logger.info(f"🔍 Would drop schema: {full_schema_name} {'CASCADE' if cascade else 'RESTRICT'}")
                 return True
             
-            # Drop schema
-            result = self.client.statement_execution.execute_statement(
-                warehouse_id=self._get_warehouse_id(),
-                statement=f"DROP SCHEMA IF EXISTS {full_schema_name} {cascade_clause}",
-                catalog=self.catalog,
-                wait_timeout="0s"
-            )
+            # Use SQLExecutor to drop schema
+            self.executor.drop_schema(schema, cascade=cascade)
             
-            if result.status.state.value == "SUCCEEDED":
-                self.results["schemas_dropped"].append(schema)
-                console.print(f"[green]✓[/green] Dropped schema: {full_schema_name}")
-                return True
-            else:
-                raise Exception(f"Drop failed: {result.status.state}")
+            self.results["schemas_dropped"].append(schema)
+            self.logger.item_success(f"Dropped schema: {full_schema_name}")
+            return True
                 
         except Exception as e:
             self.results["failed"].append((full_schema_name, str(e)))
-            console.print(f"[red]✗[/red] Failed to drop schema {full_schema_name}: {str(e)[:50]}")
+            self.logger.item_error(f"Failed to drop schema {full_schema_name}: {str(e)[:50]}")
             return False
     
     def reset_full(self, skip_confirmation: bool = False) -> bool:
         """Drop all LMIP schemas"""
-        console.print("\n" + "="*60)
-        console.print("[bold red]🔥 FULL ENVIRONMENT RESET[/bold red]")
-        console.print("="*60 + "\n")
+        self.logger.section("🔥 FULL ENVIRONMENT RESET")
         
         if not self.dry_run and not skip_confirmation:
-            console.print(Panel(
-                "[bold red]⚠️  WARNING ⚠️[/bold red]\n\n"
-                f"This will PERMANENTLY DELETE all LMIP data in catalog: [bold]{self.catalog}[/bold]\n\n"
-                "The following schemas will be dropped:\n"
+            self.logger.panel(
+                f"⚠️  WARNING ⚠️\n\n"
+                f"This will PERMANENTLY DELETE all LMIP data in catalog: {self.catalog}\n\n"
+                f"The following schemas will be dropped:\n"
                 f"  • {', '.join(self.SCHEMA_DROP_ORDER)}\n\n"
-                "[dim]This action cannot be undone.[/dim]",
-                border_style="red",
-                title="DANGER"
-            ))
+                f"This action cannot be undone.",
+                title="DANGER",
+                style="error"
+            )
             
             if not Confirm.ask("\n[bold red]Are you absolutely sure?[/bold red]", default=False):
-                console.print("\n[yellow]Reset cancelled by user.[/yellow]")
+                self.logger.warning("\nReset cancelled by user.")
                 return False
             
             # Double confirmation
-            console.print("\n[bold red]Final confirmation required.[/bold red]")
+            self.logger.error("\nFinal confirmation required.")
+            from rich.console import Console
+            console = Console()
             response = console.input("Type 'DELETE ALL' to proceed: ")
             if response != "DELETE ALL":
-                console.print("\n[yellow]Reset cancelled. Confirmation text did not match.[/yellow]")
+                self.logger.warning("\nReset cancelled. Confirmation text did not match.")
                 return False
         
         # Drop schemas in reverse dependency order
@@ -277,23 +236,21 @@ class EnvironmentResetter:
         """Drop specific layer(s)"""
         schemas = self._resolve_layers(layers)
         
-        console.print("\n" + "="*60)
-        console.print("[bold yellow]📦 PARTIAL ENVIRONMENT RESET[/bold yellow]")
-        console.print("="*60 + "\n")
-        console.print(f"[bold]Target schemas:[/bold] {', '.join(sorted(schemas))}\n")
+        self.logger.section("📦 PARTIAL ENVIRONMENT RESET")
+        self.logger.info(f"Target schemas: {', '.join(sorted(schemas))}\n")
         
         if not self.dry_run:
-            console.print(Panel(
-                "[bold yellow]⚠️  WARNING ⚠️[/bold yellow]\n\n"
-                f"This will DROP the following schemas in catalog: [bold]{self.catalog}[/bold]\n"
+            self.logger.panel(
+                f"⚠️  WARNING ⚠️\n\n"
+                f"This will DROP the following schemas in catalog: {self.catalog}\n"
                 f"  • {', '.join(sorted(schemas))}\n\n"
-                "[dim]All data in these schemas will be permanently deleted.[/dim]",
-                border_style="yellow",
-                title="CAUTION"
-            ))
+                f"All data in these schemas will be permanently deleted.",
+                title="CAUTION",
+                style="warning"
+            )
             
             if not Confirm.ask("\n[bold yellow]Proceed with layer reset?[/bold yellow]", default=False):
-                console.print("\n[yellow]Reset cancelled by user.[/yellow]")
+                self.logger.warning("\nReset cancelled by user.")
                 return False
         
         # Drop schemas in dependency order (only those selected)
@@ -312,15 +269,13 @@ class EnvironmentResetter:
         else:
             schemas = set(self.SCHEMA_DROP_ORDER)
         
-        console.print("\n" + "="*60)
-        console.print("[bold cyan]🗑️  TABLES-ONLY RESET[/bold cyan]")
-        console.print("="*60 + "\n")
-        console.print(f"[bold]Target schemas:[/bold] {', '.join(sorted(schemas))}")
-        console.print("[bold]Action:[/bold] Drop tables, keep schemas\n")
+        self.logger.section("🗑️  TABLES-ONLY RESET")
+        self.logger.info(f"Target schemas: {', '.join(sorted(schemas))}")
+        self.logger.info("Action: Drop tables, keep schemas\n")
         
         if not self.dry_run:
             if not Confirm.ask("[bold cyan]Proceed with tables-only reset?[/bold cyan]", default=False):
-                console.print("\n[yellow]Reset cancelled by user.[/yellow]")
+                self.logger.warning("\nReset cancelled by user.")
                 return False
         
         # Drop tables in each schema (keep schemas)
@@ -334,48 +289,25 @@ class EnvironmentResetter:
     
     def print_summary(self):
         """Print reset summary"""
-        console.print("\n" + "="*60)
-        console.print("[bold]📊 RESET SUMMARY[/bold]")
-        console.print("="*60)
+        self.logger.section("RESET SUMMARY")
         
-        table = Table(show_header=True, header_style="bold cyan")
-        table.add_column("Category", style="dim")
-        table.add_column("Count", justify="right")
+        # Build table data
+        headers = ["Category", "Count"]
+        rows = [
+            ["Schemas Dropped", str(len(self.results["schemas_dropped"]))],
+            ["Tables Dropped", str(len(self.results["tables_dropped"]))],
+            ["Failed Operations", str(len(self.results["failed"]))]
+        ]
         
-        table.add_row("Schemas Dropped", str(len(self.results["schemas_dropped"])))
-        table.add_row("Tables Dropped", str(len(self.results["tables_dropped"])))
-        table.add_row("Failed Operations", str(len(self.results["failed"])), style="red" if self.results["failed"] else "green")
-        
-        console.print(table)
+        self.logger.table(headers, rows)
         
         if self.results["schemas_dropped"]:
-            console.print(f"\n[dim]Dropped schemas:[/dim] {', '.join(self.results['schemas_dropped'])}")
+            self.logger.info(f"\nDropped schemas: {', '.join(self.results['schemas_dropped'])}")
         
         if self.results["failed"]:
-            console.print("\n[bold red]Failed operations:[/bold red]")
+            self.logger.error("\nFailed operations:")
             for item, error in self.results["failed"]:
-                console.print(f"  [red]✗[/red] {item}: {error[:50]}")
-        
-        console.print("="*60)
-    
-    def _get_warehouse_id(self) -> str:
-        """Get SQL warehouse ID for executing statements"""
-        import os
-        if warehouse_id := os.getenv("DATABRICKS_WAREHOUSE_ID"):
-            return warehouse_id
-        
-        warehouses = list(self.client.warehouses.list())
-        
-        if not warehouses:
-            raise Exception("No SQL warehouses found. Please create one first.")
-        
-        # Prefer serverless warehouses
-        for wh in warehouses:
-            if wh.enable_serverless_compute:
-                return wh.id
-        
-        # Fall back to first warehouse
-        return warehouses[0].id
+                self.logger.item_error(f"{item}: {error[:50]}")
 
 
 def main():
@@ -455,20 +387,23 @@ Layer Aliases:
     resetter.print_summary()
     
     # Final message
+    logger = DeploymentLogger()
     if success:
-        console.print(Panel(
-            "[bold green]✅ Reset completed successfully[/bold green]\n\n"
-            "[dim]Next steps:[/dim]\n"
+        logger.panel(
+            "✅ Reset completed successfully\n\n"
+            "Next steps:\n"
             "  • Run: python deployment/bootstrap.py (to recreate infrastructure)\n"
             "  • Run: python deployment/deploy_all.py (full redeployment)",
-            border_style="green"
-        ))
+            title="SUCCESS",
+            style="success"
+        )
     else:
-        console.print(Panel(
-            "[bold yellow]⚠️  Reset completed with errors[/bold yellow]\n\n"
+        logger.panel(
+            "⚠️  Reset completed with errors\n\n"
             "Review the logs above for details.",
-            border_style="yellow"
-        ))
+            title="WARNING",
+            style="warning"
+        )
     
     return 0 if success else 1
 

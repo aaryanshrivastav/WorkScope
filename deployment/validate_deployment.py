@@ -12,15 +12,9 @@ This module validates that all necessary components are properly deployed:
 from typing import Dict, List, Tuple, Optional
 import os
 from dotenv import load_dotenv
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.catalog import SchemaInfo
-from rich.console import Console
-from rich.table import Table
 
-from config import get_config, DeploymentConfig
+from core import get_config, DeploymentConfig, DatabricksClientWrapper, DeploymentLogger
 load_dotenv()
-
-console = Console()
 
 
 class DeploymentValidator:
@@ -36,10 +30,8 @@ class DeploymentValidator:
     
     def __init__(self, config: DeploymentConfig):
         self.config = config
-        self.w = WorkspaceClient(
-            host=os.getenv("DATABRICKS_HOST"),
-            token=os.getenv("DATABRICKS_TOKEN")
-        )
+        self.db = DatabricksClientWrapper()
+        self.logger = DeploymentLogger()
         self.validation_results = []
     
     def add_result(self, category: str, item: str, status: str, message: str = ""):
@@ -53,18 +45,16 @@ class DeploymentValidator:
     
     def validate_schema(self, schema_name: str) -> bool:
         """Validate that a schema exists"""
-        try:
-            schema_full_name = f"{self.config.catalog}.{schema_name}"
-            schema = self.w.schemas.get(schema_full_name)
+        if self.db.schema_exists(self.config.catalog, schema_name):
             self.add_result("Schema", schema_name, "✅", "Exists")
             return True
-        except Exception as e:
-            self.add_result("Schema", schema_name, "❌", f"Not found: {e}")
+        else:
+            self.add_result("Schema", schema_name, "❌", "Not found")
             return False
     
     def validate_schemas(self) -> Dict:
         """Validate all required schemas"""
-        console.print("\n[bold cyan]🗄️  Validating Unity Catalog Schemas[/bold cyan]")
+        self.logger.info("\n🗄️  Validating Unity Catalog Schemas")
         
         required_schemas = [
             self.config.bronze_schema,
@@ -84,7 +74,7 @@ class DeploymentValidator:
             results.append(result)
         
         passed = sum(results)
-        console.print(f"  Schemas validated: [green]{passed}[/green]/[bold]{len(results)}[/bold]")
+        self.logger.info(f"  Schemas validated: {passed}/{len(results)}")
         
         return {
             "total": len(results),
@@ -94,18 +84,16 @@ class DeploymentValidator:
     
     def validate_table(self, schema: str, table: str) -> bool:
         """Validate that a table exists"""
-        try:
-            table_full_name = f"{self.config.catalog}.{schema}.{table}"
-            table_info = self.w.tables.get(table_full_name)
+        if self.db.table_exists(self.config.catalog, schema, table):
             self.add_result("Table", table, "✅", f"Exists in {schema}")
             return True
-        except Exception as e:
+        else:
             self.add_result("Table", table, "❌", f"Not found in {schema}")
             return False
     
     def validate_tables(self) -> Dict:
         """Validate critical tables"""
-        console.print("\n[bold cyan]📊 Validating Critical Tables[/bold cyan]")
+        self.logger.info("\n📊 Validating Critical Tables")
         
         critical_tables = [
             (self.config.bronze_schema, "bronze_job_snapshot"),
@@ -120,7 +108,7 @@ class DeploymentValidator:
             results.append(result)
         
         passed = sum(results)
-        console.print(f"  Tables validated: [green]{passed}[/green]/[bold]{len(results)}[/bold]")
+        self.logger.info(f"  Tables validated: {passed}/{len(results)}")
         
         return {
             "total": len(results),
@@ -128,34 +116,14 @@ class DeploymentValidator:
             "failed": len(results) - passed
         }
     
-    def get_table_row_count(self, schema: str, table: str) -> Optional[int]:
-        """Get row count for a table"""
-        try:
-            full_table = f"{self.config.catalog}.{schema}.{table}"
-            result = self.w.statement_execution.execute_statement(
-                warehouse_id=self._get_warehouse_id(),
-                statement=f"SELECT COUNT(*) as cnt FROM {full_table}",
-                catalog=self.config.catalog,
-                wait_timeout="0s"
-            )
-            
-            if result.status.state.value == "SUCCEEDED" and result.result:
-                if result.result.data_array and len(result.result.data_array) > 0:
-                    return int(result.result.data_array[0][0])
-            
-            return None
-        except Exception as e:
-            console.print(f"[yellow]⚠️  Could not get row count for {schema}.{table}: {e}[/yellow]")
-            return None
-    
     def validate_metadata_seeded(self) -> Dict:
         """Validate metadata tables have been seeded with baseline data"""
-        console.print("\n[bold cyan]🌱 Validating Metadata Seeding[/bold cyan]")
+        self.logger.info("\n🌱 Validating Metadata Seeding")
         
         results = []
         for schema, table, min_rows in self.METADATA_TABLES:
             try:
-                row_count = self.get_table_row_count(schema, table)
+                row_count = self.db.get_table_row_count(self.config.catalog, schema, table)
                 
                 if row_count is None:
                     self.add_result("Metadata", table, "❌", "Could not query row count")
@@ -165,20 +133,20 @@ class DeploymentValidator:
                     results.append(False)
                 elif row_count < min_rows:
                     self.add_result("Metadata", table, "⚠️", f"Only {row_count} rows (expected ≥{min_rows})")
-                    console.print(f"  [yellow]⚠️[/yellow]  {table:40} - {row_count} rows (expected ≥{min_rows})")
+                    self.logger.item_warning(f"{table:40} - {row_count} rows (expected ≥{min_rows})")
                     results.append(True)  # Warning, but not a failure
                 else:
                     self.add_result("Metadata", table, "✅", f"{row_count} rows (≥{min_rows} expected)")
-                    console.print(f"  [green]✓[/green]  {table:40} - {row_count} rows")
+                    self.logger.item_success(f"{table:40} - {row_count} rows")
                     results.append(True)
                     
             except Exception as e:
                 self.add_result("Metadata", table, "❌", f"Error: {str(e)[:50]}")
-                console.print(f"  [red]✗[/red]  {table:40} - Failed: {str(e)[:50]}")
+                self.logger.item_error(f"{table:40} - Failed: {str(e)[:50]}")
                 results.append(False)
         
         passed = sum(results)
-        console.print(f"\n  Metadata tables validated: [green]{passed}[/green]/[bold]{len(results)}[/bold]")
+        self.logger.info(f"\n  Metadata tables validated: {passed}/{len(results)}")
         
         return {
             "total": len(results),
@@ -190,16 +158,19 @@ class DeploymentValidator:
         """Validate that a notebook exists"""
         try:
             full_path = self.config.get_full_path(notebook_path)
-            obj = self.w.workspace.get_status(full_path)
-            self.add_result("Notebook", notebook_path, "✅", "Exists")
-            return True
+            if self.db.notebook_exists(full_path):
+                self.add_result("Notebook", notebook_path, "✅", "Exists")
+                return True
+            else:
+                self.add_result("Notebook", notebook_path, "❌", "Not found")
+                return False
         except Exception as e:
             self.add_result("Notebook", notebook_path, "❌", "Not found")
             return False
     
     def validate_notebooks(self) -> Dict:
         """Validate critical notebooks"""
-        console.print("\n[bold cyan]📓 Validating Critical Notebooks[/bold cyan]")
+        self.logger.info("\n📓 Validating Critical Notebooks")
         
         critical_notebooks = [
             "notebooks/ingestion/ingest_remotive",
@@ -215,7 +186,7 @@ class DeploymentValidator:
             results.append(result)
         
         passed = sum(results)
-        console.print(f"  Notebooks validated: [green]{passed}[/green]/[bold]{len(results)}[/bold]")
+        self.logger.info(f"  Notebooks validated: {passed}/{len(results)}")
         
         return {
             "total": len(results),
@@ -226,20 +197,20 @@ class DeploymentValidator:
     def validate_job(self, job_name: str) -> bool:
         """Validate that a job exists"""
         try:
-            jobs = self.w.jobs.list(name=job_name)
-            for job in jobs:
-                if job.settings.name == job_name:
-                    self.add_result("Job", job_name, "✅", f"ID: {job.job_id}")
-                    return True
-            self.add_result("Job", job_name, "❌", "Not found")
-            return False
+            job_id = self.db.get_job_id(job_name)
+            if job_id:
+                self.add_result("Job", job_name, "✅", f"ID: {job_id}")
+                return True
+            else:
+                self.add_result("Job", job_name, "❌", "Not found")
+                return False
         except Exception as e:
             self.add_result("Job", job_name, "❌", f"Error: {e}")
             return False
     
     def validate_jobs(self) -> Dict:
         """Validate deployed jobs"""
-        console.print("\n[bold cyan]⚙️  Validating Databricks Jobs[/bold cyan]")
+        self.logger.info("\n⚙️  Validating Databricks Jobs")
         
         expected_jobs = [
             "LMIP_Initialization",
@@ -252,7 +223,7 @@ class DeploymentValidator:
             results.append(result)
         
         passed = sum(results)
-        console.print(f"  Jobs validated: [green]{passed}[/green]/[bold]{len(results)}[/bold]")
+        self.logger.info(f"  Jobs validated: {passed}/{len(results)}")
         
         return {
             "total": len(results),
@@ -262,14 +233,14 @@ class DeploymentValidator:
     
     def validate_all(self) -> Dict:
         """Run all validations"""
-        console.print("\n[bold magenta]🔍 Starting LMIP Deployment Validation[/bold magenta]")
-        console.print(f"[dim]Catalog: {self.config.catalog}[/dim]")
-        console.print(f"[dim]Workspace Root: {self.config.workspace_root}[/dim]\n")
+        self.logger.banner("LMIP DEPLOYMENT VALIDATION")
+        self.logger.info(f"Catalog: {self.config.catalog}")
+        self.logger.info(f"Workspace Root: {self.config.workspace_root}\n")
         
         # Run all validations
         schemas = self.validate_schemas()
         tables = self.validate_tables()
-        metadata = self.validate_metadata_seeded()  # NEW: Row count validation
+        metadata = self.validate_metadata_seeded()
         notebooks = self.validate_notebooks()
         jobs = self.validate_jobs()
         
@@ -284,32 +255,37 @@ class DeploymentValidator:
         self._print_results_table()
         
         # Print overall summary
-        console.print("\n" + "="*60)
-        console.print("[bold]📊 VALIDATION SUMMARY[/bold]")
-        console.print("="*60)
+        self.logger.section("VALIDATION SUMMARY")
         
         # Category breakdown
-        console.print(f"\n[bold]By Category:[/bold]")
-        console.print(f"  Schemas:   {schemas['passed']}/{schemas['total']}")
-        console.print(f"  Tables:    {tables['passed']}/{tables['total']}")
-        console.print(f"  Metadata:  {metadata['passed']}/{metadata['total']}")
-        console.print(f"  Notebooks: {notebooks['passed']}/{notebooks['total']}")
-        console.print(f"  Jobs:      {jobs['passed']}/{jobs['total']}")
+        self.logger.info("\nBy Category:")
+        self.logger.info(f"  Schemas:   {schemas['passed']}/{schemas['total']}")
+        self.logger.info(f"  Tables:    {tables['passed']}/{tables['total']}")
+        self.logger.info(f"  Metadata:  {metadata['passed']}/{metadata['total']}")
+        self.logger.info(f"  Notebooks: {notebooks['passed']}/{notebooks['total']}")
+        self.logger.info(f"  Jobs:      {jobs['passed']}/{jobs['total']}")
         
         # Overall stats
-        console.print(f"\n[bold]Overall:[/bold]")
-        console.print(f"  Total checks:     {total}")
-        console.print(f"  [green]✅ Passed:[/green]        {passed}")
-        console.print(f"  [red]❌ Failed:[/red]        {failed}")
-        console.print(f"  [bold]Success rate:[/bold]   {passed/total*100:.1f}%")
-        console.print("="*60)
+        self.logger.info("\nOverall:")
+        self.logger.info(f"  Total checks:     {total}")
+        self.logger.success(f"  Passed:           {passed}")
+        self.logger.error(f"  Failed:           {failed}")
+        self.logger.info(f"  Success rate:     {passed/total*100:.1f}%")
         
         if failed == 0:
-            console.print("\n[bold green]🎉 All validations passed![/bold green]")
-            console.print("[dim]Your LMIP deployment is ready for use.[/dim]")
+            self.logger.panel(
+                "🎉 All validations passed!\n"
+                "Your LMIP deployment is ready for use.",
+                title="SUCCESS",
+                style="success"
+            )
         else:
-            console.print("\n[bold red]⚠️  Some validations failed. Review the details above.[/bold red]")
-            console.print("[dim]Hint: Check error messages and re-run specific deployment steps.[/dim]")
+            self.logger.panel(
+                "⚠️  Some validations failed. Review the details above.\n"
+                "Hint: Check error messages and re-run specific deployment steps.",
+                title="WARNING",
+                style="warning"
+            )
         
         return {
             "total": total,
@@ -326,43 +302,20 @@ class DeploymentValidator:
     
     def _print_results_table(self):
         """Print validation results as a table"""
-        console.print("\n")
+        self.logger.info("\n")
         
-        table = Table(title="🔍 VALIDATION DETAILS", show_header=True, header_style="bold cyan")
-        table.add_column("Category", style="cyan")
-        table.add_column("Item", style="white")
-        table.add_column("Status", style="white")
-        table.add_column("Message", style="dim")
-        
+        # Build table data
+        headers = ["Category", "Item", "Status", "Message"]
+        rows = []
         for result in self.validation_results:
-            status_color = "green" if result["status"] == "✅" else ("yellow" if result["status"] == "⚠️" else "red")
-            table.add_row(
+            rows.append([
                 result["category"],
                 result["item"],
-                f"[{status_color}]{result['status']}[/{status_color}]",
+                result["status"],
                 result["message"]
-            )
+            ])
         
-        console.print(table)
-    
-    def _get_warehouse_id(self) -> str:
-        """Get SQL warehouse ID for executing statements"""
-        import os
-        if warehouse_id := os.getenv("DATABRICKS_WAREHOUSE_ID"):
-            return warehouse_id
-        
-        warehouses = list(self.w.warehouses.list())
-        
-        if not warehouses:
-            raise Exception("No SQL warehouses found. Please create one first.")
-        
-        # Prefer serverless warehouses
-        for wh in warehouses:
-            if wh.enable_serverless_compute:
-                return wh.id
-        
-        # Fall back to first warehouse
-        return warehouses[0].id
+        self.logger.table(headers, rows, title="🔍 VALIDATION DETAILS")
 
 
 def main():

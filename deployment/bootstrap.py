@@ -33,11 +33,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-from databricks.sdk import WorkspaceClient
-from rich.console import Console
-from rich.panel import Panel
-
-console = Console()
+from core import DatabricksClientWrapper, SQLExecutor, DeploymentLogger
 
 
 class LMIPBootstrapper:
@@ -148,11 +144,16 @@ class LMIPBootstrapper:
             dry_run: If True, preview changes without executing
         """
         self.catalog = catalog
-        self.client = WorkspaceClient(
-            host=os.getenv("DATABRICKS_HOST"),
-            token=os.getenv("DATABRICKS_TOKEN")
-        )
         self.dry_run = dry_run
+        
+        # Initialize core utilities
+        self.db = DatabricksClientWrapper()
+        self.executor = SQLExecutor(
+            client=self.db.client,
+            warehouse_id=self.db.warehouse_id,
+            catalog=catalog
+        )
+        self.logger = DeploymentLogger()
         
         # Auto-detect project root (deployment/ is a subdirectory)
         if project_root is None:
@@ -172,73 +173,54 @@ class LMIPBootstrapper:
     
     def print_banner(self):
         """Print bootstrap banner"""
-        banner = """
-[bold cyan]╔══════════════════════════════════════════════════════════╗
-║                                                          ║
-║           LMIP INFRASTRUCTURE BOOTSTRAP                  ║
-║                                                          ║
-║  Labor Market Intelligence Platform - One-Time Setup     ║
-║                                                          ║
-╚══════════════════════════════════════════════════════════╝[/bold cyan]
-"""
-        console.print(banner)
-        console.print(f"[bold]Target Catalog:[/bold] {self.catalog}")
-        console.print(f"[bold]Project Root:[/bold] {self.project_root}")
-        console.print(f"[bold]Dry Run:[/bold] {self.dry_run}")
-        console.print(f"[bold]Timestamp:[/bold] {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
+        self.logger.banner("LMIP INFRASTRUCTURE BOOTSTRAP")
+        self.logger.info(f"Target Catalog: {self.catalog}")
+        self.logger.info(f"Project Root: {self.project_root}")
+        self.logger.info(f"Dry Run: {self.dry_run}")
+        self.logger.info(f"Timestamp: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
     
     def create_schemas(self) -> bool:
         """Create Unity Catalog schemas"""
-        console.print("\n" + "="*60)
-        console.print("[bold magenta]📦 STEP 1: Creating Schemas[/bold magenta]")
-        console.print("="*60 + "\n")
+        self.logger.section("STEP 1: Creating Schemas")
         
         success = True
         
         for schema_name, description in self.SCHEMAS:
             try:
-                sql = f"CREATE SCHEMA IF NOT EXISTS {self.catalog}.{schema_name} COMMENT '{description}'"
-                
                 if self.dry_run:
-                    console.print(f"[blue]🔍[/blue] {schema_name:20} - Would create")
+                    self.logger.info(f"🔍 {schema_name:20} - Would create")
                     self.results["schemas"]["skipped"].append(schema_name)
                     continue
                 
-                # Execute via SQL statement API
-                result = self.client.statement_execution.execute_statement(
-                    warehouse_id=self._get_warehouse_id(),
-                    statement=sql,
-                    catalog=self.catalog,
-                    wait_timeout="0s"
+                # Use SQLExecutor to create schema
+                self.executor.create_schema(
+                    schema=schema_name,
+                    comment=description,
+                    if_not_exists=True
                 )
                 
-                if result.status.state.value == "SUCCEEDED":
-                    self.results["schemas"]["created"].append(schema_name)
-                    console.print(f"[green]✓[/green] {schema_name:20} - Created")
-                else:
-                    raise Exception(f"Statement execution failed: {result.status.state}")
+                self.results["schemas"]["created"].append(schema_name)
+                self.logger.item_success(f"{schema_name:20} - Created")
                     
             except Exception as e:
                 self.results["schemas"]["failed"].append((schema_name, str(e)))
-                console.print(f"[red]✗[/red] {schema_name:20} - Failed: {str(e)[:50]}")
+                self.logger.item_error(f"{schema_name:20} - Failed: {str(e)[:50]}")
                 success = False
         
         # Summary
-        console.print(f"\n[bold]Schemas Summary:[/bold]")
-        console.print(f"  Created: {len(self.results['schemas']['created'])}")
-        console.print(f"  Skipped: {len(self.results['schemas']['skipped'])}")
-        console.print(f"  Failed:  {len(self.results['schemas']['failed'])}")
+        self.logger.info(f"\nSchemas Summary:")
+        self.logger.info(f"  Created: {len(self.results['schemas']['created'])}")
+        self.logger.info(f"  Skipped: {len(self.results['schemas']['skipped'])}")
+        self.logger.info(f"  Failed:  {len(self.results['schemas']['failed'])}")
         
         return success
     
     def execute_ddl_files(self) -> bool:
         """Execute DDL files to create tables"""
-        console.print("\n" + "="*60)
-        console.print("[bold magenta]🏗️  STEP 2: Creating Tables (DDL Execution)[/bold magenta]")
-        console.print("="*60 + "\n")
+        self.logger.section("STEP 2: Creating Tables (DDL Execution)")
         
         if not self.ddl_dir.exists():
-            console.print(f"[red]✗ DDL directory not found: {self.ddl_dir}[/red]")
+            self.logger.error(f"DDL directory not found: {self.ddl_dir}")
             return False
         
         success = True
@@ -247,55 +229,41 @@ class LMIPBootstrapper:
             ddl_path = self.ddl_dir / ddl_file
             
             if not ddl_path.exists():
-                console.print(f"[yellow]⚠[/yellow] {ddl_file:50} - File not found, skipping")
+                self.logger.item_warning(f"{ddl_file:50} - File not found, skipping")
                 self.results["ddl"]["skipped"].append(ddl_file)
                 continue
             
             try:
-                # Read DDL file
-                with open(ddl_path, 'r') as f:
-                    ddl_sql = f.read()
-                
                 if self.dry_run:
-                    console.print(f"[blue]🔍[/blue] {ddl_file:50} - Would execute")
+                    self.logger.info(f"🔍 {ddl_file:50} - Would execute")
                     self.results["ddl"]["skipped"].append(ddl_file)
                     continue
                 
-                # Execute DDL
-                result = self.client.statement_execution.execute_statement(
-                    warehouse_id=self._get_warehouse_id(),
-                    statement=ddl_sql,
-                    catalog=self.catalog,
-                    wait_timeout="0s"
-                )
+                # Use SQLExecutor to execute DDL file
+                self.executor.execute_ddl(str(ddl_path))
                 
-                if result.status.state.value == "SUCCEEDED":
-                    self.results["ddl"]["created"].append(ddl_file)
-                    console.print(f"[green]✓[/green] {ddl_file:50} - Created")
-                else:
-                    raise Exception(f"Statement execution failed: {result.status.state}")
+                self.results["ddl"]["created"].append(ddl_file)
+                self.logger.item_success(f"{ddl_file:50} - Created")
                     
             except Exception as e:
                 self.results["ddl"]["failed"].append((ddl_file, str(e)))
-                console.print(f"[red]✗[/red] {ddl_file:50} - Failed: {str(e)[:50]}")
+                self.logger.item_error(f"{ddl_file:50} - Failed: {str(e)[:50]}")
                 success = False
         
         # Summary
-        console.print(f"\n[bold]DDL Execution Summary:[/bold]")
-        console.print(f"  Created: {len(self.results['ddl']['created'])}")
-        console.print(f"  Skipped: {len(self.results['ddl']['skipped'])}")
-        console.print(f"  Failed:  {len(self.results['ddl']['failed'])}")
+        self.logger.info(f"\nDDL Execution Summary:")
+        self.logger.info(f"  Created: {len(self.results['ddl']['created'])}")
+        self.logger.info(f"  Skipped: {len(self.results['ddl']['skipped'])}")
+        self.logger.info(f"  Failed:  {len(self.results['ddl']['failed'])}")
         
         return success
     
     def seed_metadata(self) -> bool:
         """Seed metadata tables from CSV files (IDEMPOTENT using MERGE)"""
-        console.print("\n" + "="*60)
-        console.print("[bold magenta]🌱 STEP 3: Seeding Metadata Tables[/bold magenta]")
-        console.print("="*60 + "\n")
+        self.logger.section("STEP 3: Seeding Metadata Tables")
         
         if not self.metadata_dir.exists():
-            console.print(f"[red]✗ Metadata directory not found: {self.metadata_dir}[/red]")
+            self.logger.error(f"Metadata directory not found: {self.metadata_dir}")
             return False
         
         success = True
@@ -304,7 +272,7 @@ class LMIPBootstrapper:
             csv_path = self.metadata_dir / csv_file
             
             if not csv_path.exists():
-                console.print(f"[yellow]⚠[/yellow] {csv_file:40} - File not found, skipping")
+                self.logger.item_warning(f"{csv_file:40} - File not found, skipping")
                 self.results["metadata"]["skipped"].append(csv_file)
                 continue
             
@@ -315,86 +283,48 @@ class LMIPBootstrapper:
                     rows = list(reader)
                 
                 if not rows:
-                    console.print(f"[yellow]⚠[/yellow] {csv_file:40} - Empty file, skipping")
+                    self.logger.item_warning(f"{csv_file:40} - Empty file, skipping")
                     self.results["metadata"]["skipped"].append(csv_file)
                     continue
                 
                 if self.dry_run:
-                    console.print(f"[blue]🔍[/blue] {csv_file:40} - Would seed {len(rows)} records")
+                    self.logger.info(f"🔍 {csv_file:40} - Would seed {len(rows)} records")
                     self.results["metadata"]["skipped"].append(csv_file)
                     continue
                 
-                # Build MERGE statement for idempotency
-                columns = list(rows[0].keys())
-                full_table = f"{self.catalog}.{schema}.{table}"
-                
                 # Add timestamps if not present
                 timestamp = datetime.now(timezone.utc).isoformat()
-                if 'created_at' not in columns:
-                    for row in rows:
+                for row in rows:
+                    if 'created_at' not in row:
                         row['created_at'] = timestamp
-                    columns.append('created_at')
-                
-                if 'updated_at' not in columns:
-                    for row in rows:
+                    if 'updated_at' not in row:
                         row['updated_at'] = timestamp
-                    columns.append('updated_at')
                 
                 # Determine primary key column (first column typically)
+                columns = list(rows[0].keys())
                 pk_column = columns[0]
                 
-                # Build VALUES clause for source
-                values_list = []
-                for row in rows:
-                    values = []
-                    for col in columns:
-                        value = row.get(col, '')
-                        if value is None or value == '':
-                            values.append('NULL')
-                        else:
-                            escaped_value = str(value).replace("'", "''")
-                            values.append(f"'{escaped_value}'")
-                    values_list.append(f"({', '.join(values)})")
-                
-                values_str = ',\n  '.join(values_list)
-                
-                # Build MERGE statement (idempotent upsert)
-                merge_sql = f"""
-MERGE INTO {full_table} AS target
-USING (
-  SELECT * FROM VALUES
-    {values_str}
-) AS source({', '.join(columns)})
-ON target.{pk_column} = source.{pk_column}
-WHEN MATCHED THEN
-  UPDATE SET *
-WHEN NOT MATCHED THEN
-  INSERT *
-"""
-                
-                result = self.client.statement_execution.execute_statement(
-                    warehouse_id=self._get_warehouse_id(),
-                    statement=merge_sql,
-                    catalog=self.catalog,
-                    wait_timeout="0s"
+                # Use SQLExecutor to execute MERGE
+                self.executor.execute_merge(
+                    schema=schema,
+                    table=table,
+                    data=rows,
+                    merge_keys=[pk_column]
                 )
                 
-                if result.status.state.value == "SUCCEEDED":
-                    self.results["metadata"]["seeded"].append((csv_file, len(rows)))
-                    console.print(f"[green]✓[/green] {csv_file:40} - Seeded {len(rows)} records")
-                else:
-                    raise Exception(f"Statement execution failed: {result.status.state}")
+                self.results["metadata"]["seeded"].append((csv_file, len(rows)))
+                self.logger.item_success(f"{csv_file:40} - Seeded {len(rows)} records")
                     
             except Exception as e:
                 self.results["metadata"]["failed"].append((csv_file, str(e)))
-                console.print(f"[red]✗[/red] {csv_file:40} - Failed: {str(e)[:50]}")
+                self.logger.item_error(f"{csv_file:40} - Failed: {str(e)[:50]}")
                 success = False
         
         # Summary
-        console.print(f"\n[bold]Metadata Seeding Summary:[/bold]")
-        console.print(f"  Seeded: {len(self.results['metadata']['seeded'])}")
-        console.print(f"  Skipped: {len(self.results['metadata']['skipped'])}")
-        console.print(f"  Failed:  {len(self.results['metadata']['failed'])}")
+        self.logger.info(f"\nMetadata Seeding Summary:")
+        self.logger.info(f"  Seeded: {len(self.results['metadata']['seeded'])}")
+        self.logger.info(f"  Skipped: {len(self.results['metadata']['skipped'])}")
+        self.logger.info(f"  Failed:  {len(self.results['metadata']['failed'])}")
         
         return success
     
@@ -412,66 +342,42 @@ WHEN NOT MATCHED THEN
         
         # Step 1: Create schemas
         if not self.create_schemas():
-            console.print("[yellow]⚠️  Schema creation completed with errors[/yellow]")
+            self.logger.warning("Schema creation completed with errors")
             all_success = False
         
         # Step 2: Execute DDL files
         if not self.execute_ddl_files():
-            console.print("[yellow]⚠️  DDL execution completed with errors[/yellow]")
+            self.logger.warning("DDL execution completed with errors")
             all_success = False
         
         # Step 3: Seed metadata
         if not self.seed_metadata():
-            console.print("[yellow]⚠️  Metadata seeding completed with errors[/yellow]")
+            self.logger.warning("Metadata seeding completed with errors")
             all_success = False
         
         # Final summary
-        console.print("\n" + "="*60)
-        console.print("[bold]🏁 BOOTSTRAP COMPLETE[/bold]")
-        console.print("="*60)
+        self.logger.section("BOOTSTRAP COMPLETE")
         
         if all_success:
-            console.print(Panel(
-                "[bold green]🎉 LMIP infrastructure bootstrapped successfully![/bold green]\n"
+            self.logger.panel(
+                "🎉 LMIP infrastructure bootstrapped successfully!\n"
                 "All schemas, tables, and metadata are ready.\n\n"
-                "[dim]Next steps:[/dim]\n"
+                "Next steps:\n"
                 "  1. Run: python deployment/deploy_workspace.py\n"
                 "  2. Run: python deployment/deploy_jobs.py\n"
                 "  3. Run: python deployment/validate_deployment.py",
-                border_style="green"
-            ))
+                title="SUCCESS",
+                style="success"
+            )
         else:
-            console.print(Panel(
-                "[bold yellow]⚠️  LMIP bootstrap completed with errors.[/bold yellow]\n"
+            self.logger.panel(
+                "⚠️  LMIP bootstrap completed with errors.\n"
                 "Review the logs above for details.",
-                border_style="yellow"
-            ))
-        
-        console.print("="*60)
+                title="WARNING",
+                style="warning"
+            )
         
         return all_success
-    
-    def _get_warehouse_id(self) -> str:
-        """
-        Get SQL warehouse ID for executing statements.
-        Prefers serverless warehouses, falls back to any available.
-        """
-        import os
-        if warehouse_id := os.getenv("DATABRICKS_WAREHOUSE_ID"):
-            return warehouse_id
-        
-        warehouses = list(self.client.warehouses.list())
-        
-        if not warehouses:
-            raise Exception("No SQL warehouses found. Please create one first.")
-        
-        # Prefer serverless warehouses
-        for wh in warehouses:
-            if wh.enable_serverless_compute:
-                return wh.id
-        
-        # Fall back to first warehouse
-        return warehouses[0].id
 
 
 def main():

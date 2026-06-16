@@ -9,16 +9,12 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
-import os
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.workspace import ImportFormat, Language
-from rich.console import Console
-from rich.table import Table
 
-from config import get_config, DeploymentConfig
+from core import get_config, DeploymentConfig, DeploymentLogger
+
 load_dotenv()
-
-console = Console()
 
 
 class WorkspaceDeployer:
@@ -39,6 +35,7 @@ class WorkspaceDeployer:
             host=os.getenv("DATABRICKS_HOST"),
             token=os.getenv("DATABRICKS_TOKEN")
         )
+        self.logger = DeploymentLogger()
         
     def get_language(self, filepath: Path) -> Optional[Language]:
         """Determine language from file extension"""
@@ -66,7 +63,7 @@ class WorkspaceDeployer:
         try:
             self.w.workspace.mkdirs(workspace_path)
         except Exception as e:
-            console.print(f"[yellow]⚠️  Could not create directory {workspace_path}: {e}[/yellow]")
+            self.logger.item_warning(f"Could not create directory {workspace_path}: {e}")
     
     def deploy_file(self, local_path: Path, workspace_path: str) -> Dict:
         """Deploy a single file to workspace"""
@@ -89,7 +86,7 @@ class WorkspaceDeployer:
             
             if self.config.dry_run:
                 result["status"] = "dry_run"
-                console.print(f"  [blue]🔍 Would deploy: {workspace_path}[/blue]")
+                self.logger.info(f"  🔍 Would deploy: {workspace_path}")
                 return result
             
             # Import file to workspace
@@ -102,22 +99,22 @@ class WorkspaceDeployer:
             )
             
             result["status"] = "deployed"
-            console.print(f"  [green]✅ Deployed: {workspace_path}[/green]")
+            self.logger.item_success(f"Deployed: {workspace_path}")
             
         except FileNotFoundError:
             result["status"] = "error"
             result["error"] = f"Local file not found: {local_path}"
-            console.print(f"  [red]❌ {result['error']}[/red]")
+            self.logger.item_error(result['error'])
         except Exception as e:
             result["status"] = "error"
             result["error"] = str(e)
-            console.print(f"  [red]❌ Error deploying {workspace_path}: {e}[/red]")
+            self.logger.item_error(f"Error deploying {workspace_path}: {e}")
         
         return result
     
     def deploy_directory(self, local_dir: Path, workspace_root: str) -> Dict:
         """Deploy all files in a directory to workspace"""
-        console.print(f"\n[bold cyan]📁 Deploying directory: {local_dir}[/bold cyan]")
+        self.logger.info(f"\n📁 Deploying directory: {local_dir}")
         
         results = []
         
@@ -138,7 +135,7 @@ class WorkspaceDeployer:
                 local_file = root_path / filename
                 
                 if not self.should_deploy(local_file):
-                    console.print(f"  [dim]⏭️  Skipping: {local_file.name}[/dim]")
+                    self.logger.info(f"  ⏭️  Skipping: {local_file.name}")
                     continue
                 
                 workspace_file = f"{workspace_dir}/{filename}".replace("//", "/")
@@ -157,7 +154,7 @@ class WorkspaceDeployer:
                 notebooks_dir = Path(__file__).parent.parent / "notebooks"
         
         if not notebooks_dir.exists():
-            console.print(f"[red]❌ Notebooks directory not found: {notebooks_dir}[/red]")
+            self.logger.error(f"Notebooks directory not found: {notebooks_dir}")
             return {"summary": {"total": 0, "error": 1}}
         
         workspace_root = f"{self.config.workspace_root}/notebooks"
@@ -174,14 +171,13 @@ class WorkspaceDeployer:
         }
         
         # Print summary
-        console.print("\n")
-        console.print(f"[bold]📊 DEPLOYMENT SUMMARY[/bold]")
-        console.print(f"Total files:      {summary['total']}")
-        console.print(f"[green]✅ Deployed:[/green]      {summary['deployed']}")
-        console.print(f"[dim]⏭️  Skipped:[/dim]       {summary['skipped']}")
-        console.print(f"[red]❌ Errors:[/red]        {summary['error']}")
+        self.logger.section("DEPLOYMENT SUMMARY")
+        self.logger.info(f"Total files:      {summary['total']}")
+        self.logger.item_success(f"Deployed:      {summary['deployed']}")
+        self.logger.info(f"⏭️  Skipped:       {summary['skipped']}")
+        self.logger.item_error(f"Errors:        {summary['error']}")
         if summary['dry_run'] > 0:
-            console.print(f"[blue]🔍 Dry run:[/blue]       {summary['dry_run']}")
+            self.logger.info(f"🔍 Dry run:       {summary['dry_run']}")
         
         return {"results": results, "summary": summary}
 
@@ -219,6 +215,7 @@ def main():
     
     # Create deployer
     deployer = WorkspaceDeployer(config)
+    logger = DeploymentLogger()
     
     # Get source directory
     if args.source_dir:
@@ -227,14 +224,14 @@ def main():
         source_dir = Path(__file__).parent.parent / "notebooks"
     
     if not source_dir.exists():
-        console.print(f"[red]❌ Source directory not found: {source_dir}[/red]")
+        logger.error(f"Source directory not found: {source_dir}")
         return 1
     
     # Get target path
     target_path = args.target_path or f"{config.workspace_root}/notebooks"
     
-    console.print(f"[bold]📁 Source directory:[/bold] {source_dir}")
-    console.print(f"[bold]🎯 Target path:[/bold]     {target_path}")
+    logger.info(f"📁 Source directory: {source_dir}")
+    logger.info(f"🎯 Target path:     {target_path}")
     
     # Deploy
     result = deployer.deploy_directory(source_dir, target_path)

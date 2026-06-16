@@ -13,13 +13,10 @@ from dotenv import load_dotenv
 import os
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import JobSettings
-from rich.console import Console
-from rich.table import Table
 
-from config import get_config, DeploymentConfig
+from core import get_config, DeploymentConfig, DeploymentLogger, DatabricksClientWrapper
+
 load_dotenv()
-
-console = Console()
 
 
 class JobDeployer:
@@ -31,6 +28,8 @@ class JobDeployer:
             host=os.getenv("DATABRICKS_HOST"),
             token=os.getenv("DATABRICKS_TOKEN")
         )
+        self.db = DatabricksClientWrapper()
+        self.logger = DeploymentLogger()
         
     def get_workflow_files(self, workflow_dir: Path) -> List[Path]:
         """Find all workflow definition files (JSON and YAML)"""
@@ -75,17 +74,6 @@ class JobDeployer:
         
         return json.loads(workflow_str)
     
-    def find_existing_job(self, job_name: str) -> Optional[int]:
-        """Find job ID by name if it exists"""
-        try:
-            jobs = self.w.jobs.list(name=job_name)
-            for job in jobs:
-                if job.settings.name == job_name:
-                    return job.job_id
-        except Exception as e:
-            console.print(f"  [yellow]⚠️  Error searching for existing job: {e}[/yellow]")
-        return None
-    
     def deploy_workflow(self, workflow_file: Path) -> Dict:
         """Deploy a single workflow definition to Databricks"""
         result = {
@@ -104,7 +92,7 @@ class JobDeployer:
             job_name = workflow.get("name", workflow_file.stem)
             result["job_name"] = job_name
             
-            console.print(f"\n[bold cyan]📋 Processing: {job_name}[/bold cyan] [dim]({workflow_file.name})[/dim]")
+            self.logger.info(f"\n📋 Processing: {job_name} ({workflow_file.name})")
             
             # Normalize notebook paths
             for task in workflow.get("tasks", []):
@@ -113,49 +101,49 @@ class JobDeployer:
                     normalized_path = self.normalize_notebook_path(original_path)
                     task["notebook_task"]["notebook_path"] = normalized_path
                     if normalized_path != original_path:
-                        console.print(f"  [dim]📝 Normalized path: {normalized_path}[/dim]")
+                        self.logger.info(f"  📝 Normalized path: {normalized_path}")
             
-            # Check if job already exists
-            existing_job_id = self.find_existing_job(job_name)
+            # Check if job already exists using core utility
+            existing_job_id = self.db.get_job_id(job_name)
             
             if existing_job_id and not self.config.update_existing:
                 result["status"] = "skipped"
                 result["job_id"] = existing_job_id
-                console.print(f"  [yellow]⏭️  Job already exists (ID: {existing_job_id}). Use --update to modify.[/yellow]")
+                self.logger.item_warning(f"Job already exists (ID: {existing_job_id}). Use --update to modify.")
                 return result
             
             if self.config.dry_run:
                 result["status"] = "dry_run"
-                console.print(f"  [blue]🔍 DRY RUN: Would {'update' if existing_job_id else 'create'} job[/blue]")
-                console.print(f"  [dim]📊 Tasks: {len(workflow.get('tasks', []))}[/dim]")
+                self.logger.info(f"  🔍 DRY RUN: Would {'update' if existing_job_id else 'create'} job")
+                self.logger.info(f"  📊 Tasks: {len(workflow.get('tasks', []))}")
                 return result
             
             # Create or update job
             if existing_job_id and self.config.update_existing:
-                console.print(f"  [yellow]🔄 Updating existing job (ID: {existing_job_id})...[/yellow]")
+                self.logger.warning(f"  🔄 Updating existing job (ID: {existing_job_id})...")
                 self.w.jobs.reset(job_id=existing_job_id, new_settings=workflow)
                 result["status"] = "updated"
                 result["job_id"] = existing_job_id
-                console.print(f"  [green]✅ Updated successfully[/green]")
+                self.logger.item_success("Updated successfully")
             else:
-                console.print(f"  [cyan]🚀 Creating new job...[/cyan]")
+                self.logger.info(f"  🚀 Creating new job...")
                 created_job = self.w.jobs.create(**workflow)
                 result["status"] = "created"
                 result["job_id"] = created_job.job_id
-                console.print(f"  [green]✅ Created successfully (ID: {created_job.job_id})[/green]")
+                self.logger.item_success(f"Created successfully (ID: {created_job.job_id})")
             
         except FileNotFoundError:
             result["status"] = "error"
             result["error"] = f"File not found: {workflow_file}"
-            console.print(f"  [red]❌ Error: {result['error']}[/red]")
+            self.logger.item_error(result['error'])
         except (json.JSONDecodeError, yaml.YAMLError) as e:
             result["status"] = "error"
             result["error"] = f"Invalid format: {e}"
-            console.print(f"  [red]❌ Error: {result['error']}[/red]")
+            self.logger.item_error(result['error'])
         except Exception as e:
             result["status"] = "error"
             result["error"] = str(e)
-            console.print(f"  [red]❌ Error: {result['error']}[/red]")
+            self.logger.item_error(result['error'])
         
         return result
     
@@ -166,14 +154,14 @@ class JobDeployer:
         if specific_workflow:
             workflow_files = [f for f in workflow_files if f.name == specific_workflow]
             if not workflow_files:
-                console.print(f"[red]❌ Workflow file not found: {specific_workflow}[/red]")
+                self.logger.error(f"Workflow file not found: {specific_workflow}")
                 return {"summary": {"total": 0, "error": 1}}
         
         if not workflow_files:
-            console.print("[red]❌ No workflow files found in directory[/red]")
+            self.logger.error("No workflow files found in directory")
             return {"summary": {"total": 0}}
         
-        console.print(f"\n[bold]🔍 Found {len(workflow_files)} workflow file(s)[/bold]")
+        self.logger.info(f"\n🔍 Found {len(workflow_files)} workflow file(s)")
         
         results = []
         for workflow_file in sorted(workflow_files):
@@ -197,12 +185,11 @@ class JobDeployer:
     
     def _print_summary(self, summary: Dict, results: List[Dict]):
         """Print deployment summary as a rich table"""
-        console.print("\n")
+        self.logger.section("DEPLOYMENT SUMMARY")
         
-        table = Table(title="📊 DEPLOYMENT SUMMARY", show_header=True, header_style="bold magenta")
-        table.add_column("Workflow", style="cyan")
-        table.add_column("Status", style="white")
-        table.add_column("Job ID", style="yellow")
+        # Build table data
+        headers = ["Workflow", "Status", "Job ID"]
+        rows = []
         
         for result in results:
             status_emoji = {
@@ -214,17 +201,17 @@ class JobDeployer:
             }.get(result["status"], "❓ Unknown")
             
             job_id = str(result["job_id"]) if result["job_id"] else "-"
-            table.add_row(result["job_name"] or result["file"], status_emoji, job_id)
+            rows.append([result["job_name"] or result["file"], status_emoji, job_id])
         
-        console.print(table)
+        self.logger.table(headers, rows)
         
-        console.print(f"\n[bold]Total workflows:[/bold]  {summary['total']}")
-        console.print(f"[green]✅ Created:[/green]       {summary['created']}")
-        console.print(f"[yellow]🔄 Updated:[/yellow]       {summary['updated']}")
-        console.print(f"[dim]⏭️  Skipped:[/dim]       {summary['skipped']}")
-        console.print(f"[red]❌ Errors:[/red]        {summary['error']}")
+        self.logger.info(f"\nTotal workflows:  {summary['total']}")
+        self.logger.item_success(f"Created:       {summary['created']}")
+        self.logger.warning(f"🔄 Updated:       {summary['updated']}")
+        self.logger.info(f"⏭️  Skipped:       {summary['skipped']}")
+        self.logger.item_error(f"Errors:        {summary['error']}")
         if summary['dry_run'] > 0:
-            console.print(f"[blue]🔍 Dry run:[/blue]       {summary['dry_run']}")
+            self.logger.info(f"🔍 Dry run:       {summary['dry_run']}")
 
 
 def main():
@@ -265,10 +252,12 @@ def main():
             workflow_dir = Path(__file__).parent.parent / "workflows"
     
     if not workflow_dir.exists():
-        console.print(f"[red]❌ Workflow directory not found: {workflow_dir}[/red]")
+        logger = DeploymentLogger()
+        logger.error(f"Workflow directory not found: {workflow_dir}")
         return 1
     
-    console.print(f"[bold]📁 Workflow directory:[/bold] {workflow_dir}")
+    logger = DeploymentLogger()
+    logger.info(f"📁 Workflow directory: {workflow_dir}")
     
     # Print configuration
     config.print_summary()

@@ -12,7 +12,7 @@ from typing import Optional, List
 import os
 from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.sql import WarehouseInfo
+from databricks.sdk.service.sql import EndpointInfo
 from rich.console import Console
 
 console = Console()
@@ -69,7 +69,7 @@ class DatabricksClientWrapper:
         Raises:
             Exception: If no warehouses found
         """
-        warehouses: List[WarehouseInfo] = list(self.client.warehouses.list())
+        warehouses: List[EndpointInfo] = list(self.client.warehouses.list())
         
         if not warehouses:
             raise Exception(
