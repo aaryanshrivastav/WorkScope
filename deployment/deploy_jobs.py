@@ -9,13 +9,15 @@ import json
 import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
+import os
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import JobSettings
 from rich.console import Console
 from rich.table import Table
 
 from config import get_config, DeploymentConfig
-
+load_dotenv()
 
 console = Console()
 
@@ -25,7 +27,10 @@ class JobDeployer:
     
     def __init__(self, config: DeploymentConfig):
         self.config = config
-        self.w = WorkspaceClient()
+        self.w = WorkspaceClient(
+            host=os.getenv("DATABRICKS_HOST"),
+            token=os.getenv("DATABRICKS_TOKEN")
+        )
         
     def get_workflow_files(self, workflow_dir: Path) -> List[Path]:
         """Find all workflow definition files (JSON and YAML)"""

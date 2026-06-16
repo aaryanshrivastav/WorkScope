@@ -38,7 +38,8 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Set
 from datetime import datetime, timezone
-
+import os
+from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from rich.console import Console
 from rich.panel import Panel
@@ -46,6 +47,7 @@ from rich.table import Table
 from rich.prompt import Confirm
 
 console = Console()
+load_dotenv()
 
 
 class EnvironmentResetter:
@@ -95,7 +97,10 @@ class EnvironmentResetter:
             dry_run: If True, preview changes without executing
         """
         self.catalog = catalog
-        self.client = WorkspaceClient()
+        self.client = WorkspaceClient(
+            host=os.getenv("DATABRICKS_HOST"),
+            token=os.getenv("DATABRICKS_TOKEN")
+        )
         self.dry_run = dry_run
         
         # Track results
@@ -181,7 +186,7 @@ class EnvironmentResetter:
                     warehouse_id=self._get_warehouse_id(),
                     statement=f"DROP TABLE IF EXISTS {full_table_name}",
                     catalog=self.catalog,
-                    wait_timeout="30s"
+                    wait_timeout="0s"
                 )
                 
                 if result.status.state.value == "SUCCEEDED":
@@ -217,7 +222,7 @@ class EnvironmentResetter:
                 warehouse_id=self._get_warehouse_id(),
                 statement=f"DROP SCHEMA IF EXISTS {full_schema_name} {cascade_clause}",
                 catalog=self.catalog,
-                wait_timeout="60s"
+                wait_timeout="0s"
             )
             
             if result.status.state.value == "SUCCEEDED":

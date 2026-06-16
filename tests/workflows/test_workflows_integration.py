@@ -12,8 +12,11 @@ import pytest
 import json
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import RunLifeCycleState, RunResultState
+load_dotenv()
 
 
 WORKFLOW_DIR = "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/workflows"
@@ -32,7 +35,10 @@ WORKFLOWS = {
 @pytest.fixture(scope="module")
 def workspace_client():
     """Get Databricks workspace client."""
-    return WorkspaceClient()
+    return WorkspaceClient(
+        host=os.getenv("DATABRICKS_HOST"),
+        token=os.getenv("DATABRICKS_TOKEN")
+    )
 
 
 @pytest.fixture(scope="module")

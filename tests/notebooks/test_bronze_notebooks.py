@@ -12,9 +12,11 @@ Tests verify:
 import pytest
 import os
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.jobs import RunLifeCycleState
-
+load_dotenv()
 
 WORKSPACE_ROOT = "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP"
 BRONZE_NOTEBOOKS = {
@@ -30,7 +32,10 @@ BRONZE_NOTEBOOKS = {
 @pytest.fixture(scope="module")
 def workspace_client():
     """Get Databricks workspace client."""
-    return WorkspaceClient()
+    return WorkspaceClient( 
+        host=os.getenv("DATABRICKS_HOST"),
+        token=os.getenv("DATABRICKS_TOKEN")
+    )
 
 
 @pytest.fixture(scope="module")

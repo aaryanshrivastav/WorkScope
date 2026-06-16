@@ -949,7 +949,10 @@ databricks workspace import-dir \
 ```python
 # Create job for each validation category
 from databricks.sdk import WorkspaceClient
-w = WorkspaceClient()
+w = WorkspaceClient(
+    host=os.getenv("DATABRICKS_HOST"),
+    token=os.getenv("DATABRICKS_TOKEN")
+)
 
 for validation_file in validation_files:
     w.jobs.create(

@@ -9,12 +9,14 @@ Provides a higher-level interface to the Databricks SDK with:
 """
 
 from typing import Optional, List
+import os
+from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.sql import WarehouseInfo
 from rich.console import Console
 
 console = Console()
-
+load_dotenv()
 
 class DatabricksClientWrapper:
     """Enhanced Databricks SDK client with common patterns"""
@@ -26,7 +28,10 @@ class DatabricksClientWrapper:
         Args:
             warehouse_id: Optional SQL warehouse ID. If not provided, auto-selects.
         """
-        self.client = WorkspaceClient()
+        self.client = WorkspaceClient(
+            host=os.getenv("DATABRICKS_HOST"),
+            token=os.getenv("DATABRICKS_TOKEN")
+        )
         self._warehouse_id = warehouse_id
         self._cached_warehouse_id: Optional[str] = None
     
@@ -163,7 +168,7 @@ class DatabricksClientWrapper:
                 warehouse_id=self.warehouse_id,
                 statement=f"SELECT COUNT(*) as cnt FROM {full_table}",
                 catalog=catalog,
-                wait_timeout="30s"
+                wait_timeout="0s"
             )
             
             if result.status.state.value == "SUCCEEDED" and result.result:

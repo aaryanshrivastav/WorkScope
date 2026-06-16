@@ -29,6 +29,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 import csv
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 from databricks.sdk import WorkspaceClient
 from rich.console import Console
@@ -145,7 +148,10 @@ class LMIPBootstrapper:
             dry_run: If True, preview changes without executing
         """
         self.catalog = catalog
-        self.client = WorkspaceClient()
+        self.client = WorkspaceClient(
+            host=os.getenv("DATABRICKS_HOST"),
+            token=os.getenv("DATABRICKS_TOKEN")
+        )
         self.dry_run = dry_run
         
         # Auto-detect project root (deployment/ is a subdirectory)
@@ -203,7 +209,7 @@ class LMIPBootstrapper:
                     warehouse_id=self._get_warehouse_id(),
                     statement=sql,
                     catalog=self.catalog,
-                    wait_timeout="30s"
+                    wait_timeout="0s"
                 )
                 
                 if result.status.state.value == "SUCCEEDED":
@@ -260,7 +266,7 @@ class LMIPBootstrapper:
                     warehouse_id=self._get_warehouse_id(),
                     statement=ddl_sql,
                     catalog=self.catalog,
-                    wait_timeout="60s"
+                    wait_timeout="0s"
                 )
                 
                 if result.status.state.value == "SUCCEEDED":
@@ -370,7 +376,7 @@ WHEN NOT MATCHED THEN
                     warehouse_id=self._get_warehouse_id(),
                     statement=merge_sql,
                     catalog=self.catalog,
-                    wait_timeout="60s"
+                    wait_timeout="0s"
                 )
                 
                 if result.status.state.value == "SUCCEEDED":

@@ -13,9 +13,12 @@ from pathlib import Path
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.sql import StatementState
 from rich.console import Console
+from dotenv import load_dotenv
+import os
+import time
 
 console = Console()
-
+load_dotenv()
 
 class SQLExecutor:
     """Helper for executing SQL statements via Databricks SDK"""
@@ -36,7 +39,7 @@ class SQLExecutor:
     def execute(
         self, 
         sql: str, 
-        timeout: str = "60s",
+        timeout: str = "0s",
         catalog: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -44,51 +47,66 @@ class SQLExecutor:
         
         Args:
             sql: SQL statement to execute
-            timeout: Wait timeout (default: 60s)
+            timeout: Wait timeout (default: 0s)
             catalog: Optional catalog override
         
         Returns:
             Dict with 'success' (bool), 'state' (str), 'error' (Optional[str]), 'result' (Any)
         """
-        try:
-            result = self.client.statement_execution.execute_statement(
-                warehouse_id=self.warehouse_id,
-                statement=sql,
-                catalog=catalog or self.catalog,
-                wait_timeout=timeout
-            )
-            
-            if result.status.state.value == "SUCCEEDED":
+        result = self.client.statement_execution.execute_statement(
+            warehouse_id=self.warehouse_id,
+            statement=sql,
+            catalog=catalog or self.catalog,
+            wait_timeout=timeout
+        )
+
+        statement_id = result.statement_id
+
+        while True:
+
+            state = result.status.state
+            print(f"DEBUG STATE: {state}")
+
+            if state == StatementState.SUCCEEDED:
                 return {
                     "success": True,
                     "state": "SUCCEEDED",
                     "error": None,
                     "result": result.result
                 }
-            else:
-                error_msg = result.status.error.message if result.status.error else str(result.status.state)
+
+            if state in (
+                StatementState.FAILED,
+                StatementState.CANCELED,
+                StatementState.CLOSED
+            ):
+                error_msg = (
+                    result.status.error.message
+                    if result.status.error
+                    else str(state)
+                )
+
                 return {
                     "success": False,
-                    "state": result.status.state.value,
+                    "state": state.value,
                     "error": error_msg,
                     "result": None
                 }
-                
-        except Exception as e:
-            return {
-                "success": False,
-                "state": "ERROR",
-                "error": str(e),
-                "result": None
-            }
+
+            # PENDING or RUNNING
+            time.sleep(2)
+
+            result = self.client.statement_execution.get_statement(
+                statement_id
+            )
     
-    def execute_ddl(self, ddl_file: Path, timeout: str = "120s") -> Dict[str, Any]:
+    def execute_ddl(self, ddl_file: Path, timeout: str = "0s") -> Dict[str, Any]:
         """
         Execute a DDL file.
         
         Args:
             ddl_file: Path to DDL SQL file
-            timeout: Wait timeout (default: 120s for DDL)
+            timeout: Wait timeout (default: 0s for DDL)
         
         Returns:
             Dict with execution result
@@ -136,7 +154,7 @@ class SQLExecutor:
         comment_clause = f"COMMENT '{comment}'" if comment else ""
         
         sql = f"CREATE SCHEMA {if_clause} {self.catalog}.{schema} {comment_clause}"
-        return self.execute(sql, timeout="30s")
+        return self.execute(sql, timeout="0s")
     
     def drop_schema(
         self, 
@@ -159,7 +177,7 @@ class SQLExecutor:
         cascade_clause = "CASCADE" if cascade else "RESTRICT"
         
         sql = f"DROP SCHEMA {if_clause} {self.catalog}.{schema} {cascade_clause}"
-        return self.execute(sql, timeout="60s")
+        return self.execute(sql, timeout="0s")
     
     def drop_table(
         self, 
@@ -182,7 +200,7 @@ class SQLExecutor:
         full_table = f"{self.catalog}.{schema}.{table}"
         
         sql = f"DROP TABLE {if_clause} {full_table}"
-        return self.execute(sql, timeout="30s")
+        return self.execute(sql, timeout="0s")
     
     def get_row_count(self, schema: str, table: str) -> Optional[int]:
         """
@@ -196,7 +214,7 @@ class SQLExecutor:
             Row count or None if query fails
         """
         full_table = f"{self.catalog}.{schema}.{table}"
-        result = self.execute(f"SELECT COUNT(*) as cnt FROM {full_table}", timeout="30s")
+        result = self.execute(f"SELECT COUNT(*) as cnt FROM {full_table}", timeout="0s")
         
         if result["success"] and result["result"] and result["result"].data_array:
             try:
@@ -211,7 +229,7 @@ class SQLExecutor:
         target_table: str,
         source_data: List[Dict[str, Any]],
         merge_key: str,
-        timeout: str = "60s"
+        timeout: str = "0s"
     ) -> Dict[str, Any]:
         """
         Execute a MERGE statement (idempotent upsert).

@@ -8,13 +8,15 @@ and other workspace assets to Databricks.
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
+import os
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.workspace import ImportFormat, Language
 from rich.console import Console
 from rich.table import Table
 
 from config import get_config, DeploymentConfig
-
+load_dotenv()
 
 console = Console()
 
@@ -33,7 +35,10 @@ class WorkspaceDeployer:
     
     def __init__(self, config: DeploymentConfig):
         self.config = config
-        self.w = WorkspaceClient()
+        self.w = WorkspaceClient(
+            host=os.getenv("DATABRICKS_HOST"),
+            token=os.getenv("DATABRICKS_TOKEN")
+        )
         
     def get_language(self, filepath: Path) -> Optional[Language]:
         """Determine language from file extension"""
