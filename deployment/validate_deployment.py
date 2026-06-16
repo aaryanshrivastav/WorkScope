@@ -6,9 +6,10 @@ This module validates that all necessary components are properly deployed:
 - Workspace notebooks
 - Databricks Jobs
 - Required tables
+- Metadata seeding (row counts)
 """
 
-from typing import Dict, List
+from typing import Dict, List, Tuple, Optional
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.catalog import SchemaInfo
 from rich.console import Console
@@ -22,6 +23,14 @@ console = Console()
 
 class DeploymentValidator:
     """Validate LMIP deployment"""
+    
+    # Metadata tables with minimum expected row counts
+    METADATA_TABLES = [
+        ("metadata", "taxonomy_role_canonical", 50),       # At least 50 roles
+        ("metadata", "taxonomy_skill_catalog", 100),       # At least 100 skills
+        ("metadata", "taxonomy_sectors", 10),              # At least 10 sectors
+        ("metadata", "taxonomy_role_families", 10),        # At least 10 families
+    ]
     
     def __init__(self, config: DeploymentConfig):
         self.config = config
@@ -114,6 +123,64 @@ class DeploymentValidator:
             "failed": len(results) - passed
         }
     
+    def get_table_row_count(self, schema: str, table: str) -> Optional[int]:
+        """Get row count for a table"""
+        try:
+            full_table = f"{self.config.catalog}.{schema}.{table}"
+            result = self.w.statement_execution.execute_statement(
+                warehouse_id=self._get_warehouse_id(),
+                statement=f"SELECT COUNT(*) as cnt FROM {full_table}",
+                catalog=self.config.catalog,
+                wait_timeout="30s"
+            )
+            
+            if result.status.state.value == "SUCCEEDED" and result.result:
+                if result.result.data_array and len(result.result.data_array) > 0:
+                    return int(result.result.data_array[0][0])
+            
+            return None
+        except Exception as e:
+            console.print(f"[yellow]⚠️  Could not get row count for {schema}.{table}: {e}[/yellow]")
+            return None
+    
+    def validate_metadata_seeded(self) -> Dict:
+        """Validate metadata tables have been seeded with baseline data"""
+        console.print("\n[bold cyan]🌱 Validating Metadata Seeding[/bold cyan]")
+        
+        results = []
+        for schema, table, min_rows in self.METADATA_TABLES:
+            try:
+                row_count = self.get_table_row_count(schema, table)
+                
+                if row_count is None:
+                    self.add_result("Metadata", table, "❌", "Could not query row count")
+                    results.append(False)
+                elif row_count == 0:
+                    self.add_result("Metadata", table, "❌", f"Empty table (expected ≥{min_rows} rows)")
+                    results.append(False)
+                elif row_count < min_rows:
+                    self.add_result("Metadata", table, "⚠️", f"Only {row_count} rows (expected ≥{min_rows})")
+                    console.print(f"  [yellow]⚠️[/yellow]  {table:40} - {row_count} rows (expected ≥{min_rows})")
+                    results.append(True)  # Warning, but not a failure
+                else:
+                    self.add_result("Metadata", table, "✅", f"{row_count} rows (≥{min_rows} expected)")
+                    console.print(f"  [green]✓[/green]  {table:40} - {row_count} rows")
+                    results.append(True)
+                    
+            except Exception as e:
+                self.add_result("Metadata", table, "❌", f"Error: {str(e)[:50]}")
+                console.print(f"  [red]✗[/red]  {table:40} - Failed: {str(e)[:50]}")
+                results.append(False)
+        
+        passed = sum(results)
+        console.print(f"\n  Metadata tables validated: [green]{passed}[/green]/[bold]{len(results)}[/bold]")
+        
+        return {
+            "total": len(results),
+            "passed": passed,
+            "failed": len(results) - passed
+        }
+    
     def validate_notebook(self, notebook_path: str) -> bool:
         """Validate that a notebook exists"""
         try:
@@ -197,13 +264,14 @@ class DeploymentValidator:
         # Run all validations
         schemas = self.validate_schemas()
         tables = self.validate_tables()
+        metadata = self.validate_metadata_seeded()  # NEW: Row count validation
         notebooks = self.validate_notebooks()
         jobs = self.validate_jobs()
         
         # Calculate overall results
-        total = (schemas["total"] + tables["total"] + 
+        total = (schemas["total"] + tables["total"] + metadata["total"] +
                 notebooks["total"] + jobs["total"])
-        passed = (schemas["passed"] + tables["passed"] + 
+        passed = (schemas["passed"] + tables["passed"] + metadata["passed"] +
                  notebooks["passed"] + jobs["passed"])
         failed = total - passed
         
@@ -214,16 +282,29 @@ class DeploymentValidator:
         console.print("\n" + "="*60)
         console.print("[bold]📊 VALIDATION SUMMARY[/bold]")
         console.print("="*60)
-        console.print(f"Total checks:     {total}")
-        console.print(f"[green]✅ Passed:[/green]        {passed}")
-        console.print(f"[red]❌ Failed:[/red]        {failed}")
-        console.print(f"[bold]Success rate:[/bold]   {passed/total*100:.1f}%")
+        
+        # Category breakdown
+        console.print(f"\n[bold]By Category:[/bold]")
+        console.print(f"  Schemas:   {schemas['passed']}/{schemas['total']}")
+        console.print(f"  Tables:    {tables['passed']}/{tables['total']}")
+        console.print(f"  Metadata:  {metadata['passed']}/{metadata['total']}")
+        console.print(f"  Notebooks: {notebooks['passed']}/{notebooks['total']}")
+        console.print(f"  Jobs:      {jobs['passed']}/{jobs['total']}")
+        
+        # Overall stats
+        console.print(f"\n[bold]Overall:[/bold]")
+        console.print(f"  Total checks:     {total}")
+        console.print(f"  [green]✅ Passed:[/green]        {passed}")
+        console.print(f"  [red]❌ Failed:[/red]        {failed}")
+        console.print(f"  [bold]Success rate:[/bold]   {passed/total*100:.1f}%")
         console.print("="*60)
         
         if failed == 0:
             console.print("\n[bold green]🎉 All validations passed![/bold green]")
+            console.print("[dim]Your LMIP deployment is ready for use.[/dim]")
         else:
             console.print("\n[bold red]⚠️  Some validations failed. Review the details above.[/bold red]")
+            console.print("[dim]Hint: Check error messages and re-run specific deployment steps.[/dim]")
         
         return {
             "total": total,
@@ -232,6 +313,7 @@ class DeploymentValidator:
             "categories": {
                 "schemas": schemas,
                 "tables": tables,
+                "metadata": metadata,
                 "notebooks": notebooks,
                 "jobs": jobs
             }
@@ -248,7 +330,7 @@ class DeploymentValidator:
         table.add_column("Message", style="dim")
         
         for result in self.validation_results:
-            status_color = "green" if result["status"] == "✅" else "red"
+            status_color = "green" if result["status"] == "✅" else ("yellow" if result["status"] == "⚠️" else "red")
             table.add_row(
                 result["category"],
                 result["item"],
@@ -257,6 +339,25 @@ class DeploymentValidator:
             )
         
         console.print(table)
+    
+    def _get_warehouse_id(self) -> str:
+        """Get SQL warehouse ID for executing statements"""
+        import os
+        if warehouse_id := os.getenv("DATABRICKS_WAREHOUSE_ID"):
+            return warehouse_id
+        
+        warehouses = list(self.w.warehouses.list())
+        
+        if not warehouses:
+            raise Exception("No SQL warehouses found. Please create one first.")
+        
+        # Prefer serverless warehouses
+        for wh in warehouses:
+            if wh.enable_serverless_compute:
+                return wh.id
+        
+        # Fall back to first warehouse
+        return warehouses[0].id
 
 
 def main():

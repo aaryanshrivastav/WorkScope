@@ -1,44 +1,44 @@
 """
-LMIP Initialization Script
+LMIP Bootstrap Script
 
-Consolidates all init notebooks into a single Python script that:
-1. Creates Unity Catalog schemas
-2. Executes DDL files to create tables
-3. Seeds metadata tables from CSV files
-4. Validates the environment
+One-time infrastructure provisioning for the Labor Market Intelligence Platform.
 
-This script replaces the 5-notebook init workflow and can be called
-from deployment scripts or run standalone.
+This script creates the foundational Unity Catalog infrastructure:
+1. Creates Unity Catalog schemas (9 schemas)
+2. Executes DDL files to create tables (40+ tables)
+3. Seeds baseline metadata from CSV files (canonical roles, skills, sectors)
+
+This script is IDEMPOTENT - safe to run multiple times.
 
 Usage:
-    from deployment.init import LMIPInitializer
+    python deployment/bootstrap.py [--catalog workspace] [--dry-run]
     
-    initializer = LMIPInitializer(catalog="workspace")
-    success = initializer.initialize()
+Examples:
+    # Bootstrap with default catalog
+    python deployment/bootstrap.py
     
-Or run directly:
-    python deployment/init.py --catalog workspace
+    # Bootstrap with custom catalog
+    python deployment/bootstrap.py --catalog my_catalog
+    
+    # Dry run (preview changes)
+    python deployment/bootstrap.py --dry-run
 """
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 from datetime import datetime, timezone
 import csv
-import requests
 
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.errors import NotFound, ResourceConflict
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-
 
 console = Console()
 
 
-class LMIPInitializer:
-    """Initialize LMIP environment: schemas, tables, and metadata"""
+class LMIPBootstrapper:
+    """Bootstrap LMIP infrastructure: schemas, tables, and metadata"""
     
     # Schema definitions
     SCHEMAS = [
@@ -122,7 +122,7 @@ class LMIPInitializer:
         "publish_publish_bundle_log.sql",
     ]
     
-    # Metadata CSV files to seed
+    # Metadata CSV files to seed (file, schema, table)
     METADATA_CSV_FILES = [
         ("canonical_roles.csv", "metadata", "taxonomy_role_canonical"),
         ("role_families.csv", "metadata", "taxonomy_role_families"),
@@ -130,22 +130,23 @@ class LMIPInitializer:
         ("canonical_skills.csv", "metadata", "taxonomy_skill_catalog"),
     ]
     
-    # API endpoints to validate
-    API_ENDPOINTS = [
-        "https://remotive.com/api/remote-jobs",
-        "https://www.arbeitnow.com/api/job-board-api"
-    ]
-    
-    def __init__(self, catalog: str = "workspace", project_root: Optional[Path] = None):
+    def __init__(
+        self, 
+        catalog: str = "workspace", 
+        project_root: Optional[Path] = None,
+        dry_run: bool = False
+    ):
         """
-        Initialize the LMIP initializer.
+        Initialize the LMIP bootstrapper.
         
         Args:
             catalog: Unity Catalog name (default: workspace)
-            project_root: Project root directory (default: auto-detect from script location)
+            project_root: Project root directory (default: auto-detect)
+            dry_run: If True, preview changes without executing
         """
         self.catalog = catalog
         self.client = WorkspaceClient()
+        self.dry_run = dry_run
         
         # Auto-detect project root (deployment/ is a subdirectory)
         if project_root is None:
@@ -160,24 +161,24 @@ class LMIPInitializer:
         self.results = {
             "schemas": {"created": [], "skipped": [], "failed": []},
             "ddl": {"created": [], "skipped": [], "failed": []},
-            "metadata": {"seeded": [], "skipped": [], "failed": []},
-            "validation": {"passed": [], "warned": [], "failed": []}
+            "metadata": {"seeded": [], "skipped": [], "failed": []}
         }
     
     def print_banner(self):
-        """Print initialization banner"""
+        """Print bootstrap banner"""
         banner = """
 [bold cyan]╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
-║           LMIP ENVIRONMENT INITIALIZATION                ║
+║           LMIP INFRASTRUCTURE BOOTSTRAP                  ║
 ║                                                          ║
-║  Labor Market Intelligence Platform - Setup & Validate  ║
+║  Labor Market Intelligence Platform - One-Time Setup     ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝[/bold cyan]
 """
         console.print(banner)
         console.print(f"[bold]Target Catalog:[/bold] {self.catalog}")
         console.print(f"[bold]Project Root:[/bold] {self.project_root}")
+        console.print(f"[bold]Dry Run:[/bold] {self.dry_run}")
         console.print(f"[bold]Timestamp:[/bold] {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n")
     
     def create_schemas(self) -> bool:
@@ -190,8 +191,12 @@ class LMIPInitializer:
         
         for schema_name, description in self.SCHEMAS:
             try:
-                # Try to create schema
                 sql = f"CREATE SCHEMA IF NOT EXISTS {self.catalog}.{schema_name} COMMENT '{description}'"
+                
+                if self.dry_run:
+                    console.print(f"[blue]🔍[/blue] {schema_name:20} - Would create")
+                    self.results["schemas"]["skipped"].append(schema_name)
+                    continue
                 
                 # Execute via SQL statement API
                 result = self.client.statement_execution.execute_statement(
@@ -202,22 +207,8 @@ class LMIPInitializer:
                 )
                 
                 if result.status.state.value == "SUCCEEDED":
-                    # Check if it was created or already existed
-                    # Since we use IF NOT EXISTS, we need to verify
-                    verify_sql = f"DESCRIBE SCHEMA {self.catalog}.{schema_name}"
-                    verify_result = self.client.statement_execution.execute_statement(
-                        warehouse_id=self._get_warehouse_id(),
-                        statement=verify_sql,
-                        catalog=self.catalog,
-                        wait_timeout="10s"
-                    )
-                    
-                    if verify_result.status.state.value == "SUCCEEDED":
-                        self.results["schemas"]["created"].append(schema_name)
-                        console.print(f"[green]✓[/green] {schema_name:20} - Created")
-                    else:
-                        self.results["schemas"]["skipped"].append(schema_name)
-                        console.print(f"[yellow]⚠[/yellow] {schema_name:20} - Already exists")
+                    self.results["schemas"]["created"].append(schema_name)
+                    console.print(f"[green]✓[/green] {schema_name:20} - Created")
                 else:
                     raise Exception(f"Statement execution failed: {result.status.state}")
                     
@@ -259,6 +250,11 @@ class LMIPInitializer:
                 with open(ddl_path, 'r') as f:
                     ddl_sql = f.read()
                 
+                if self.dry_run:
+                    console.print(f"[blue]🔍[/blue] {ddl_file:50} - Would execute")
+                    self.results["ddl"]["skipped"].append(ddl_file)
+                    continue
+                
                 # Execute DDL
                 result = self.client.statement_execution.execute_statement(
                     warehouse_id=self._get_warehouse_id(),
@@ -287,7 +283,7 @@ class LMIPInitializer:
         return success
     
     def seed_metadata(self) -> bool:
-        """Seed metadata tables from CSV files"""
+        """Seed metadata tables from CSV files (IDEMPOTENT using MERGE)"""
         console.print("\n" + "="*60)
         console.print("[bold magenta]🌱 STEP 3: Seeding Metadata Tables[/bold magenta]")
         console.print("="*60 + "\n")
@@ -317,49 +313,62 @@ class LMIPInitializer:
                     self.results["metadata"]["skipped"].append(csv_file)
                     continue
                 
-                # Build INSERT statement
+                if self.dry_run:
+                    console.print(f"[blue]🔍[/blue] {csv_file:40} - Would seed {len(rows)} records")
+                    self.results["metadata"]["skipped"].append(csv_file)
+                    continue
+                
+                # Build MERGE statement for idempotency
                 columns = list(rows[0].keys())
                 full_table = f"{self.catalog}.{schema}.{table}"
                 
-                # Add created_at/updated_at if not present
+                # Add timestamps if not present
+                timestamp = datetime.now(timezone.utc).isoformat()
                 if 'created_at' not in columns:
                     for row in rows:
-                        row['created_at'] = datetime.now(timezone.utc).isoformat()
+                        row['created_at'] = timestamp
                     columns.append('created_at')
                 
                 if 'updated_at' not in columns:
                     for row in rows:
-                        row['updated_at'] = datetime.now(timezone.utc).isoformat()
+                        row['updated_at'] = timestamp
                     columns.append('updated_at')
                 
-                # Build VALUES clause
+                # Determine primary key column (first column typically)
+                pk_column = columns[0]
+                
+                # Build VALUES clause for source
                 values_list = []
                 for row in rows:
                     values = []
                     for col in columns:
                         value = row.get(col, '')
-                        # Escape quotes and wrap strings
                         if value is None or value == '':
                             values.append('NULL')
                         else:
-                            # Escape single quotes
                             escaped_value = str(value).replace("'", "''")
                             values.append(f"'{escaped_value}'")
                     values_list.append(f"({', '.join(values)})")
                 
-                values_str = ',\\n  '.join(values_list)
+                values_str = ',\n  '.join(values_list)
                 
-                # Use MERGE to make it idempotent (upsert)
-                # First, try to create a temp view and merge
-                insert_sql = f"""
-                INSERT INTO {full_table} ({', '.join(columns)})
-                VALUES
-                  {values_str}
-                """
+                # Build MERGE statement (idempotent upsert)
+                merge_sql = f"""
+MERGE INTO {full_table} AS target
+USING (
+  SELECT * FROM VALUES
+    {values_str}
+) AS source({', '.join(columns)})
+ON target.{pk_column} = source.{pk_column}
+WHEN MATCHED THEN
+  UPDATE SET *
+WHEN NOT MATCHED THEN
+  INSERT *
+"""
                 
                 result = self.client.statement_execution.execute_statement(
                     warehouse_id=self._get_warehouse_id(),
-                    statement=insert_sql,
+                    statement=merge_sql,
                     catalog=self.catalog,
                     wait_timeout="60s"
                 )
@@ -383,105 +392,9 @@ class LMIPInitializer:
         
         return success
     
-    def validate_environment(self) -> Tuple[bool, str]:
+    def bootstrap(self) -> bool:
         """
-        Validate the environment setup.
-        
-        Returns:
-            Tuple of (success, status) where status is SUCCESS, WARNINGS, or FAILED
-        """
-        console.print("\n" + "="*60)
-        console.print("[bold magenta]🔍 STEP 4: Environment Validation[/bold magenta]")
-        console.print("="*60 + "\n")
-        
-        # Python version check
-        console.print("[bold]Python Environment[/bold]")
-        python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-        if sys.version_info >= (3, 10):
-            self.results["validation"]["passed"].append(("Python Version", python_version))
-            console.print(f"[green]✓[/green] Python {python_version}")
-        else:
-            self.results["validation"]["warned"].append(("Python Version", f"{python_version} (recommended >= 3.10)"))
-            console.print(f"[yellow]⚠[/yellow] Python {python_version} (recommended >= 3.10)")
-        
-        # Required packages
-        required_packages = ["databricks.sdk", "requests", "rich"]
-        for package in required_packages:
-            try:
-                __import__(package.replace(".sdk", ""))
-                self.results["validation"]["passed"].append((f"Package: {package}", "Installed"))
-                console.print(f"[green]✓[/green] {package} - Installed")
-            except ImportError:
-                self.results["validation"]["failed"].append((f"Package: {package}", "Not installed"))
-                console.print(f"[red]✗[/red] {package} - Not installed")
-        
-        # Catalog validation
-        console.print(f"\n[bold]Catalog and Schemas[/bold]")
-        try:
-            # Verify schemas exist
-            for schema_name, _ in self.SCHEMAS:
-                try:
-                    verify_sql = f"DESCRIBE SCHEMA {self.catalog}.{schema_name}"
-                    result = self.client.statement_execution.execute_statement(
-                        warehouse_id=self._get_warehouse_id(),
-                        statement=verify_sql,
-                        catalog=self.catalog,
-                        wait_timeout="10s"
-                    )
-                    
-                    if result.status.state.value == "SUCCEEDED":
-                        self.results["validation"]["passed"].append((f"Schema: {schema_name}", "Exists"))
-                        console.print(f"[green]✓[/green] Schema: {schema_name}")
-                    else:
-                        self.results["validation"]["failed"].append((f"Schema: {schema_name}", "Does not exist"))
-                        console.print(f"[red]✗[/red] Schema: {schema_name} - Does not exist")
-                        
-                except Exception as e:
-                    self.results["validation"]["failed"].append((f"Schema: {schema_name}", str(e)))
-                    console.print(f"[red]✗[/red] Schema: {schema_name} - {str(e)[:50]}")
-        
-        except Exception as e:
-            self.results["validation"]["failed"].append(("Schema Validation", str(e)))
-            console.print(f"[red]✗[/red] Schema validation failed: {str(e)[:50]}")
-        
-        # Network connectivity
-        console.print(f"\n[bold]Network Connectivity[/bold]")
-        for endpoint in self.API_ENDPOINTS:
-            try:
-                response = requests.get(endpoint, timeout=10)
-                if response.status_code == 200:
-                    self.results["validation"]["passed"].append((f"API: {endpoint}", f"Reachable (HTTP {response.status_code})"))
-                    console.print(f"[green]✓[/green] {endpoint} - Reachable")
-                else:
-                    self.results["validation"]["warned"].append((f"API: {endpoint}", f"HTTP {response.status_code}"))
-                    console.print(f"[yellow]⚠[/yellow] {endpoint} - HTTP {response.status_code}")
-            except requests.exceptions.Timeout:
-                self.results["validation"]["warned"].append((f"API: {endpoint}", "Timeout"))
-                console.print(f"[yellow]⚠[/yellow] {endpoint} - Timeout")
-            except Exception as e:
-                self.results["validation"]["warned"].append((f"API: {endpoint}", str(e)[:50]))
-                console.print(f"[yellow]⚠[/yellow] {endpoint} - {str(e)[:50]}")
-        
-        # Determine overall status
-        passed = len(self.results["validation"]["passed"])
-        warned = len(self.results["validation"]["warned"])
-        failed = len(self.results["validation"]["failed"])
-        
-        console.print(f"\n[bold]Validation Summary:[/bold]")
-        console.print(f"  Passed:   {passed}")
-        console.print(f"  Warnings: {warned}")
-        console.print(f"  Failed:   {failed}")
-        
-        if failed > 0:
-            return False, "FAILED"
-        elif warned > 0:
-            return True, "WARNINGS"
-        else:
-            return True, "SUCCESS"
-    
-    def initialize(self) -> bool:
-        """
-        Execute complete initialization workflow.
+        Execute complete bootstrap workflow.
         
         Returns:
             True if all steps succeeded, False otherwise
@@ -506,34 +419,26 @@ class LMIPInitializer:
             console.print("[yellow]⚠️  Metadata seeding completed with errors[/yellow]")
             all_success = False
         
-        # Step 4: Validate environment
-        validation_success, validation_status = self.validate_environment()
-        if not validation_success:
-            console.print("[yellow]⚠️  Environment validation completed with errors[/yellow]")
-            all_success = False
-        
         # Final summary
         console.print("\n" + "="*60)
-        console.print("[bold]🏁 INITIALIZATION COMPLETE[/bold]")
+        console.print("[bold]🏁 BOOTSTRAP COMPLETE[/bold]")
         console.print("="*60)
         
-        if all_success and validation_status == "SUCCESS":
+        if all_success:
             console.print(Panel(
-                "[bold green]🎉 LMIP environment initialized successfully![/bold green]\\n"
-                "All schemas, tables, and metadata are ready.",
+                "[bold green]🎉 LMIP infrastructure bootstrapped successfully![/bold green]\n"
+                "All schemas, tables, and metadata are ready.\n\n"
+                "[dim]Next steps:[/dim]\n"
+                "  1. Run: python deployment/deploy_workspace.py\n"
+                "  2. Run: python deployment/deploy_jobs.py\n"
+                "  3. Run: python deployment/validate_deployment.py",
                 border_style="green"
-            ))
-        elif all_success and validation_status == "WARNINGS":
-            console.print(Panel(
-                "[bold yellow]⚠️  LMIP environment initialized with warnings.[/bold yellow]\\n"
-                "Review the validation warnings above.",
-                border_style="yellow"
             ))
         else:
             console.print(Panel(
-                "[bold red]❌ LMIP environment initialization encountered errors.[/bold red]\\n"
+                "[bold yellow]⚠️  LMIP bootstrap completed with errors.[/bold yellow]\n"
                 "Review the logs above for details.",
-                border_style="red"
+                border_style="yellow"
             ))
         
         console.print("="*60)
@@ -543,14 +448,12 @@ class LMIPInitializer:
     def _get_warehouse_id(self) -> str:
         """
         Get SQL warehouse ID for executing statements.
-        Uses the first available serverless warehouse, or falls back to any warehouse.
+        Prefers serverless warehouses, falls back to any available.
         """
-        # Try to get from environment variable first
         import os
         if warehouse_id := os.getenv("DATABRICKS_WAREHOUSE_ID"):
             return warehouse_id
         
-        # Otherwise, find a warehouse
         warehouses = list(self.client.warehouses.list())
         
         if not warehouses:
@@ -570,33 +473,39 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description="Initialize LMIP environment: schemas, tables, and metadata",
+        description="Bootstrap LMIP infrastructure: schemas, tables, and metadata",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Initialize with default catalog (workspace)
-  python deployment/init.py
+  # Bootstrap with default catalog (workspace)
+  python deployment/bootstrap.py
   
-  # Initialize with custom catalog
-  python deployment/init.py --catalog my_catalog
+  # Bootstrap with custom catalog
+  python deployment/bootstrap.py --catalog my_catalog
   
-  # Initialize with custom project root
-  python deployment/init.py --project-root /path/to/LMIP
+  # Dry run (preview changes)
+  python deployment/bootstrap.py --dry-run
+  
+  # Bootstrap with custom project root
+  python deployment/bootstrap.py --project-root /path/to/LMIP
 """
     )
     parser.add_argument("--catalog", default="workspace",
                        help="Unity Catalog name (default: workspace)")
     parser.add_argument("--project-root", type=Path, default=None,
                        help="Project root directory (default: auto-detect)")
+    parser.add_argument("--dry-run", action="store_true",
+                       help="Preview changes without executing")
     
     args = parser.parse_args()
     
-    # Create initializer and run
-    initializer = LMIPInitializer(
+    # Create bootstrapper and run
+    bootstrapper = LMIPBootstrapper(
         catalog=args.catalog,
-        project_root=args.project_root
+        project_root=args.project_root,
+        dry_run=args.dry_run
     )
-    success = initializer.initialize()
+    success = bootstrapper.bootstrap()
     
     return 0 if success else 1
 

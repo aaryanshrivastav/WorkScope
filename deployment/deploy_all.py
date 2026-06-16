@@ -2,13 +2,26 @@
 Complete LMIP Deployment Orchestrator
 
 This script orchestrates the full deployment of the LMIP project:
-0. Initialize environment (schemas, tables, metadata)
-1. Deploy workspace assets (notebooks, files)
-2. Deploy Databricks Jobs
-3. Validate the deployment
+0. Bootstrap infrastructure (schemas, tables, metadata) - ONE-TIME
+1. Deploy workspace assets (notebooks, files) - REPEATABLE
+2. Deploy Databricks Jobs - REPEATABLE
+3. Validate the deployment - VERIFICATION
 
 Usage:
-    python deploy_all.py [--dry-run] [--update] [--skip-validation] [--skip-init]
+    python deploy_all.py [--dry-run] [--update] [--skip-validation] [--skip-bootstrap]
+
+Examples:
+    # Full deployment (bootstrap + workspace + jobs + validation)
+    python deploy_all.py
+    
+    # Deploy with updates to existing resources
+    python deploy_all.py --update
+    
+    # Deploy without bootstrap (schemas/tables already exist)
+    python deploy_all.py --skip-bootstrap
+    
+    # Dry run to preview changes
+    python deploy_all.py --dry-run
 """
 
 import sys
@@ -20,7 +33,7 @@ from config import get_config, DeploymentConfig
 from deploy_workspace import WorkspaceDeployer
 from deploy_jobs import JobDeployer
 from validate_deployment import DeploymentValidator
-from init import LMIPInitializer
+from bootstrap import LMIPBootstrapper
 
 
 console = Console()
@@ -46,41 +59,45 @@ class FullDeployer:
         console.print(banner)
         self.config.print_summary()
     
-    def initialize_environment(self) -> bool:
-        """Initialize LMIP environment: schemas, tables, and metadata"""
+    def bootstrap_infrastructure(self) -> bool:
+        """Bootstrap LMIP infrastructure: schemas, tables, and metadata (ONE-TIME)"""
         console.print("\n" + "="*60)
-        console.print("[bold magenta]🚀 STEP 0: Initializing Environment[/bold magenta]")
+        console.print("[bold magenta]🚀 STEP 0: Bootstrapping Infrastructure[/bold magenta]")
         console.print("="*60)
+        console.print("[dim]This step creates Unity Catalog schemas, tables, and seeds metadata[/dim]\n")
         
         try:
             # Get project root
             project_root = Path(__file__).parent.parent
             
-            # Extract catalog from workspace_root or use default
-            # workspace_root format: /Users/user@domain.com/LMIP
-            catalog = "workspace"  # default
+            # Create bootstrapper
+            bootstrapper = LMIPBootstrapper(
+                catalog=self.config.catalog,
+                project_root=project_root,
+                dry_run=self.config.dry_run
+            )
             
-            initializer = LMIPInitializer(catalog=catalog, project_root=project_root)
-            success = initializer.initialize()
+            success = bootstrapper.bootstrap()
             
             if success:
-                console.print("[green]✅ Environment initialization completed successfully[/green]")
+                console.print("[green]✅ Infrastructure bootstrap completed successfully[/green]")
             else:
-                console.print("[yellow]⚠️  Environment initialization completed with warnings[/yellow]")
+                console.print("[yellow]⚠️  Infrastructure bootstrap completed with warnings[/yellow]")
             
             return success
             
         except Exception as e:
-            console.print(f"[red]❌ Environment initialization failed: {e}[/red]")
+            console.print(f"[red]❌ Infrastructure bootstrap failed: {e}[/red]")
             import traceback
             console.print(traceback.format_exc())
             return False
     
     def deploy_workspace(self) -> bool:
-        """Deploy workspace assets"""
+        """Deploy workspace assets (REPEATABLE)"""
         console.print("\n" + "="*60)
         console.print("[bold magenta]📁 STEP 1: Deploying Workspace Assets[/bold magenta]")
         console.print("="*60)
+        console.print("[dim]This step uploads notebooks, SQL files, and helper scripts[/dim]\n")
         
         try:
             deployer = WorkspaceDeployer(self.config)
@@ -106,10 +123,11 @@ class FullDeployer:
             return False
     
     def deploy_jobs(self) -> bool:
-        """Deploy Databricks Jobs"""
+        """Deploy Databricks Jobs (REPEATABLE)"""
         console.print("\n" + "="*60)
         console.print("[bold magenta]⚙️  STEP 2: Deploying Databricks Jobs[/bold magenta]")
         console.print("="*60)
+        console.print("[dim]This step creates/updates workflow definitions[/dim]\n")
         
         try:
             deployer = JobDeployer(self.config)
@@ -134,10 +152,11 @@ class FullDeployer:
             return False
     
     def validate_deployment(self) -> bool:
-        """Validate the deployment"""
+        """Validate the deployment (VERIFICATION)"""
         console.print("\n" + "="*60)
         console.print("[bold magenta]🔍 STEP 3: Validating Deployment[/bold magenta]")
         console.print("="*60)
+        console.print("[dim]This step verifies schemas, tables, notebooks, and jobs[/dim]\n")
         
         try:
             validator = DeploymentValidator(self.config)
@@ -154,22 +173,24 @@ class FullDeployer:
             console.print(f"[red]❌ Validation failed: {e}[/red]")
             return False
     
-    def deploy_all(self, skip_validation: bool = False, skip_init: bool = False) -> bool:
+    def deploy_all(self, skip_validation: bool = False, skip_bootstrap: bool = False) -> bool:
         """Execute full deployment"""
         self.print_banner()
         
         # Track overall success
         all_success = True
         
-        # Step 0: Initialize environment (unless skipped)
-        if not skip_init:
-            if not self.initialize_environment():
+        # Step 0: Bootstrap infrastructure (unless skipped)
+        if not skip_bootstrap:
+            if not self.bootstrap_infrastructure():
                 all_success = False
                 if not self.config.force_deploy:
-                    console.print("\n[red]❌ Deployment aborted due to environment initialization failure[/red]")
+                    console.print("\n[red]❌ Deployment aborted due to bootstrap failure[/red]")
+                    console.print("[dim]Hint: Use --skip-bootstrap if schemas already exist[/dim]")
                     return False
         else:
-            console.print("\n[yellow]⚠️  Skipping environment initialization (--skip-init)[/yellow]")
+            console.print("\n[yellow]⚠️  Skipping infrastructure bootstrap (--skip-bootstrap)[/yellow]")
+            console.print("[dim]Assuming schemas, tables, and metadata already exist[/dim]")
         
         # Step 1: Deploy workspace assets
         if not self.deploy_workspace():
@@ -197,18 +218,27 @@ class FullDeployer:
         
         if all_success:
             console.print(Panel(
-                "[bold green]🎉 All deployment steps completed successfully![/bold green]",
+                "[bold green]🎉 All deployment steps completed successfully![/bold green]\n\n"
+                "[bold]Next Steps:[/bold]\n"
+                "  1. Configure and schedule: [cyan]LMIP_Daily_Ingestion[/cyan]\n"
+                "  2. Run your first data ingestion job\n"
+                "  3. Monitor pipeline runs in the audit tables\n"
+                "  4. Check the publish schema for consumer-ready datasets\n\n"
+                "[dim]Deployment Summary:[/dim]\n"
+                "  • Infrastructure: Bootstrapped\n"
+                "  • Workspace: Deployed\n"
+                "  • Jobs: Created/Updated\n"
+                "  • Validation: Passed",
                 border_style="green"
             ))
-            console.print("\n[bold]Next Steps:[/bold]")
-            console.print("  1. Configure and schedule: [cyan]LMIP_Daily_Ingestion[/cyan]")
-            console.print("  2. Run your first data ingestion job")
-            console.print("  3. Monitor pipeline runs in the audit tables")
-            console.print("  4. Check the publish schema for consumer-ready datasets")
         else:
             console.print(Panel(
-                "[bold yellow]⚠️  Deployment completed with some issues.[/bold yellow]\n"
-                "Review the logs above for details.",
+                "[bold yellow]⚠️  Deployment completed with some issues.[/bold yellow]\n\n"
+                "Review the logs above for details.\n\n"
+                "[dim]Troubleshooting:[/dim]\n"
+                "  • Check error messages in each step\n"
+                "  • Run: python deployment/validate_deployment.py\n"
+                "  • Review: LMIP/deployment/README.md",
                 border_style="yellow"
             ))
         
@@ -226,7 +256,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Full deployment (init + workspace + jobs + validation)
+  # Full deployment (bootstrap + workspace + jobs + validation)
   python deploy_all.py
   
   # Dry run to preview changes
@@ -238,11 +268,23 @@ Examples:
   # Deploy without validation
   python deploy_all.py --skip-validation
   
-  # Deploy without initialization (schemas/tables already exist)
-  python deploy_all.py --skip-init
+  # Deploy without bootstrap (schemas/tables already exist)
+  python deploy_all.py --skip-bootstrap
   
   # Force deploy even if errors occur
   python deploy_all.py --force
+
+Deployment Phases:
+  0. Bootstrap (ONE-TIME):  Create schemas, tables, seed metadata
+  1. Workspace (REPEATABLE): Upload notebooks, SQL files, scripts
+  2. Jobs (REPEATABLE):      Create/update Databricks Jobs
+  3. Validation (VERIFY):    Check all components deployed correctly
+
+Common Workflows:
+  • First-time setup:     python deploy_all.py
+  • Code update:          python deploy_all.py --skip-bootstrap --update
+  • Full reset + deploy:  python reset_environment.py --full --confirm
+                          python deploy_all.py
 """
     )
     parser.add_argument("--dry-run", action="store_true",
@@ -253,8 +295,8 @@ Examples:
                        help="Continue deployment even if errors occur")
     parser.add_argument("--skip-validation", action="store_true",
                        help="Skip validation step after deployment")
-    parser.add_argument("--skip-init", action="store_true",
-                       help="Skip environment initialization (schemas/tables already exist)")
+    parser.add_argument("--skip-bootstrap", action="store_true",
+                       help="Skip infrastructure bootstrap (schemas/tables already exist)")
     
     args = parser.parse_args()
     
@@ -273,7 +315,7 @@ Examples:
     deployer = FullDeployer(config)
     success = deployer.deploy_all(
         skip_validation=args.skip_validation,
-        skip_init=args.skip_init
+        skip_bootstrap=args.skip_bootstrap
     )
     
     return 0 if success else 1

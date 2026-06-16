@@ -1,16 +1,35 @@
+# Core Dependencies
 pyspark>=3.5.0
 delta-spark>=2.4.0
 pandas>=2.0.3
 numpy>=1.24.3
 pyarrow>=12.0.1
+
+# Database Connectors
 psycopg2-binary>=2.9.9
 sqlalchemy>=2.0.23
+
+# HTTP and API
 requests>=2.31.0
-jsonschema>=4.19.0
+
+# Data Validation and Parsing
+jsonschema>=4.20.0
 pyyaml>=6.0
 python-dateutil>=2.8.2
 
-# Testing dependencies
+# Databricks SDK
+databricks-sdk>=0.20.0
+
+# Environment Management
+python-dotenv>=1.0.0
+
+# CLI Utilities
+click>=8.1.0
+
+# Logging and Formatting
+rich>=13.7.0
+
+# Testing Dependencies
 pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-xdist>=3.5.0
@@ -18,11 +37,7 @@ pytest-timeout>=2.2.0
 pytest-html>=4.1.0
 pytest-spark>=0.6.0
 
-# Databricks SDK
-databricks-sdk>=0.18.0
-rich>=13.7.0
-
-# Optional dependencies (uncomment as needed)
+# Optional Dependencies (uncomment as needed)
 # matplotlib>=3.7.1
 # seaborn>=0.12.2
 # plotly>=5.17.0
