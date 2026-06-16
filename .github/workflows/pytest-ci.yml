@@ -13,7 +13,74 @@ on:
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
+  validate-platform:
+    name: Validate LMIP Platform Assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install validation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          pip install pyyaml
+
+      - name: Validate Repository Structure
+        run: |
+          test -d notebooks
+          test -d contracts
+          test -d workflows
+          test -d sql
+          test -d docs
+
+          echo "✅ Repository structure valid"
+
+      - name: Validate Workflow JSON Files
+        run: |
+          find workflows -name "*.json" -type f | while read file
+          do
+            echo "Validating $file"
+            jq empty "$file"
+          done
+
+          echo "✅ Workflow JSON validation passed"
+
+      - name: Validate Contract YAML Files
+        run: |
+          python << 'EOF'
+          import yaml
+          from pathlib import Path
+
+          required_fields = ["table_name"]
+
+          failures = []
+
+          for file in Path("contracts").rglob("*.yaml"):
+              try:
+                  with open(file, "r") as f:
+                      data = yaml.safe_load(f)
+
+                  if not isinstance(data, dict):
+                      failures.append(f"{file}: not a valid YAML object")
+                      continue
+
+                  for field in required_fields:
+                      if field not in data:
+                          failures.append(f"{file}: missing {field}")
+
+              except Exception as e:
+                  failures.append(f"{file}: {e}")
+
+          if failures:
+              print("\n".join(failures))
+              raise SystemExit(1)
+
+          print("✅ Contract validation passed")
+          EOF  
   test:
+    needs: validate-platform
     name: Run Pytest Suite
     runs-on: ubuntu-latest
     
@@ -61,8 +128,7 @@ jobs:
             --html=tests/reports/report-highest-risk.html \
             --self-contained-html \
             --cov=LMIP \
-            --cov-report=xml:tests/reports/coverage-highest-risk.xml \
-            || echo "Highest risk tests failed"
+            --cov-report=xml:tests/reports/coverage-highest-risk.xml 
       
       - name: Run Pytest - High Risk Tests (Sector + SCD2)
         run: |
@@ -89,7 +155,8 @@ jobs:
             --cov=LMIP \
             --cov-report=xml:tests/reports/coverage-all.xml \
             --cov-report=html:tests/reports/coverage-html \
-            --cov-report=term-missing
+            --cov-report=term-missing \
+            --cov-fail-under=70
       
       - name: Upload Test Reports
         uses: actions/upload-artifact@v4
