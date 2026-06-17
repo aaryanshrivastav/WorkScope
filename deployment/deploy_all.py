@@ -210,7 +210,7 @@ class FullDeployer:
                 "  • Jobs: Created/Updated\n"
                 "  • Validation: Passed",
                 title="SUCCESS",
-                style="success"
+                style="green"
             )
         else:
             self.logger.panel(
@@ -221,7 +221,7 @@ class FullDeployer:
                 "  • Run: python deployment/validate_deployment.py\n"
                 "  • Review: LMIP/deployment/README.md",
                 title="WARNING",
-                style="warning"
+                style="yellow"
             )
         
         return all_success

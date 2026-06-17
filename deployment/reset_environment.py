@@ -117,7 +117,7 @@ class EnvironmentResetter:
         self.logger.panel(
             "⚠️  WARNING: This operation DELETES data permanently!",
             title="ENVIRONMENT RESET UTILITY",
-            style="error"
+            style="red"
         )
         self.logger.info(f"Target Catalog: {self.catalog}")
         self.logger.info(f"Dry Run: {self.dry_run}")
@@ -208,7 +208,7 @@ class EnvironmentResetter:
                 f"  • {', '.join(self.SCHEMA_DROP_ORDER)}\n\n"
                 f"This action cannot be undone.",
                 title="DANGER",
-                style="error"
+                style="red"
             )
             
             if not Confirm.ask("\n[bold red]Are you absolutely sure?[/bold red]", default=False):
@@ -246,7 +246,7 @@ class EnvironmentResetter:
                 f"  • {', '.join(sorted(schemas))}\n\n"
                 f"All data in these schemas will be permanently deleted.",
                 title="CAUTION",
-                style="warning"
+                style="yellow"
             )
             
             if not Confirm.ask("\n[bold yellow]Proceed with layer reset?[/bold yellow]", default=False):
@@ -299,7 +299,7 @@ class EnvironmentResetter:
             ["Failed Operations", str(len(self.results["failed"]))]
         ]
         
-        self.logger.table(headers, rows)
+        self.logger.table("", headers, rows)
         
         if self.results["schemas_dropped"]:
             self.logger.info(f"\nDropped schemas: {', '.join(self.results['schemas_dropped'])}")
@@ -395,14 +395,14 @@ Layer Aliases:
             "  • Run: python deployment/bootstrap.py (to recreate infrastructure)\n"
             "  • Run: python deployment/deploy_all.py (full redeployment)",
             title="SUCCESS",
-            style="success"
+            style="green"
         )
     else:
         logger.panel(
             "⚠️  Reset completed with errors\n\n"
             "Review the logs above for details.",
             title="WARNING",
-            style="warning"
+            style="yellow"
         )
     
     return 0 if success else 1

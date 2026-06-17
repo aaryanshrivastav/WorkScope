@@ -224,63 +224,43 @@ class SQLExecutor:
         
         return None
     
-    def execute_merge(
+    def execute_insert(
         self,
         target_table: str,
         source_data: List[Dict[str, Any]],
-        merge_key: str,
         timeout: str = "0s"
-    ) -> Dict[str, Any]:
-        """
-        Execute a MERGE statement (idempotent upsert).
-        
-        Args:
-            target_table: Full table name (catalog.schema.table)
-            source_data: List of dicts representing rows
-            merge_key: Column name to use for matching (e.g., 'id')
-            timeout: Wait timeout
-        
-        Returns:
-            Dict with execution result
-        """
+    ):
         if not source_data:
             return {
                 "success": False,
                 "state": "EMPTY_DATA",
-                "error": "No data provided for merge",
+                "error": "No data provided",
                 "result": None
             }
-        
-        # Build VALUES clause
+
         columns = list(source_data[0].keys())
-        values_list = []
-        
+
+        values = []
+
         for row in source_data:
-            values = []
+            row_values = []
+
             for col in columns:
                 value = row.get(col)
+
                 if value is None:
-                    values.append("NULL")
+                    row_values.append("NULL")
                 else:
-                    # Escape quotes
                     escaped = str(value).replace("'", "''")
-                    values.append(f"'{escaped}'")
-            values_list.append(f"({', '.join(values)})")
-        
-        values_str = ',\n  '.join(values_list)
-        
-        # Build MERGE statement
-        merge_sql = f"""
-MERGE INTO {target_table} AS target
-USING (
-  SELECT * FROM VALUES
-    {values_str}
-) AS source({', '.join(columns)})
-ON target.{merge_key} = source.{merge_key}
-WHEN MATCHED THEN
-  UPDATE SET *
-WHEN NOT MATCHED THEN
-  INSERT *
-"""
-        
-        return self.execute(merge_sql, timeout=timeout)
+                    row_values.append(f"'{escaped}'")
+
+            values.append(f"({', '.join(row_values)})")
+
+        sql = f"""
+        INSERT INTO {target_table}
+        ({', '.join(columns)})
+        VALUES
+        {', '.join(values)}
+        """
+
+        return self.execute(sql, timeout=timeout)

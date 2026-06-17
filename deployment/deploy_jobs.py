@@ -203,7 +203,7 @@ class JobDeployer:
             job_id = str(result["job_id"]) if result["job_id"] else "-"
             rows.append([result["job_name"] or result["file"], status_emoji, job_id])
         
-        self.logger.table(headers, rows)
+        self.logger.table("", headers, rows)
         
         self.logger.info(f"\nTotal workflows:  {summary['total']}")
         self.logger.item_success(f"Created:       {summary['created']}")

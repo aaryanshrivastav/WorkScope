@@ -83,11 +83,11 @@ class DeploymentLogger:
         msg = f"{item:50} - {message}" if message else f"{item:50}"
         self.console.print(f"[green]✓[/green] {msg}")
     
-    def item_error(self, item: str, message: str):
+    def item_error(self, item: str, message: str = ""):
         """Print error for an item"""
         self.console.print(f"[red]✗[/red] {item:50} - {message[:50]}")
     
-    def item_warning(self, item: str, message: str):
+    def item_warning(self, item: str, message: str=""):
         """Print warning for an item"""
         self.console.print(f"[yellow]⚠[/yellow] {item:50} - {message[:50]}")
     

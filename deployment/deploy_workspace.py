@@ -6,6 +6,7 @@ and other workspace assets to Databricks.
 """
 
 import os
+import base64
 from pathlib import Path
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
@@ -41,22 +42,14 @@ class WorkspaceDeployer:
         """Determine language from file extension"""
         return self.LANGUAGE_MAP.get(filepath.suffix.lower())
     
+    SUPPORTED_EXTENSIONS = {
+        ".py",
+        ".sql",
+        ".ipynb"
+    }
+
     def should_deploy(self, filepath: Path) -> bool:
-        """Check if file should be deployed"""
-        # Skip hidden files, deployment files, and certain extensions
-        skip_patterns = [
-            '.git', '__pycache__', '.pyc', '.env', 
-            '.md', '.txt', '.json', '.yml', '.yaml',
-            'deployment/', '.gitkeep'
-        ]
-        
-        path_str = str(filepath)
-        for pattern in skip_patterns:
-            if pattern in path_str:
-                return False
-        
-        # Only deploy files with recognized extensions
-        return self.get_language(filepath) is not None
+        return filepath.suffix.lower() in self.SUPPORTED_EXTENSIONS
     
     def ensure_directory(self, workspace_path: str):
         """Ensure directory exists in workspace"""
@@ -77,11 +70,13 @@ class WorkspaceDeployer:
         try:
             # Read file content
             with open(local_path, 'rb') as f:
-                content = f.read()
+                content = base64.b64encode(f.read()).decode("utf-8")
             
             # Determine format
-            is_notebook = local_path.suffix == '.ipynb'
-            import_format = ImportFormat.AUTO
+            if local_path.suffix.lower() == ".ipynb":
+                import_format = ImportFormat.JUPYTER
+            else:
+                import_format = ImportFormat.SOURCE
             language = self.get_language(local_path)
             
             if self.config.dry_run:
@@ -124,7 +119,11 @@ class WorkspaceDeployer:
             
             # Calculate relative path from local_dir
             relative_path = root_path.relative_to(local_dir)
-            workspace_dir = f"{workspace_root}/{relative_path}".replace("//", "/")
+
+            if relative_path == Path("."):
+                workspace_dir = workspace_root
+            else:
+                workspace_dir = f"{workspace_root.rstrip('/')}/{relative_path}"
             
             # Ensure workspace directory exists
             if not self.config.dry_run:

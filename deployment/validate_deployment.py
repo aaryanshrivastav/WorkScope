@@ -277,14 +277,14 @@ class DeploymentValidator:
                 "🎉 All validations passed!\n"
                 "Your LMIP deployment is ready for use.",
                 title="SUCCESS",
-                style="success"
+                style="green"
             )
         else:
             self.logger.panel(
                 "⚠️  Some validations failed. Review the details above.\n"
                 "Hint: Check error messages and re-run specific deployment steps.",
                 title="WARNING",
-                style="warning"
+                style="yellow"
             )
         
         return {

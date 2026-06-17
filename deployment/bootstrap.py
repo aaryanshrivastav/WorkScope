@@ -193,18 +193,23 @@ class LMIPBootstrapper:
                     continue
                 
                 # Use SQLExecutor to create schema
-                self.executor.create_schema(
+                result=self.executor.create_schema(
                     schema=schema_name,
                     comment=description,
                     if_not_exists=True
                 )
-                
-                self.results["schemas"]["created"].append(schema_name)
-                self.logger.item_success(f"{schema_name:20} - Created")
+                if result["success"]:
+                    self.results["schemas"]["created"].append(schema_name)
+                    self.logger.item_success(f"{schema_name:20}", "Created")
+                else :  
+                    e=result["error"]
+                    self.results["schemas"]["failed"].append((schema_name, str(e)))
+                    self.logger.item_error(f"{schema_name:20}", f"Failed: {str(e)[:50]}")
+                    success = False
                     
             except Exception as e:
                 self.results["schemas"]["failed"].append((schema_name, str(e)))
-                self.logger.item_error(f"{schema_name:20} - Failed: {str(e)[:50]}")
+                self.logger.item_error(f"{schema_name:20}", f"Failed: {str(e)[:50]}")
                 success = False
         
         # Summary
@@ -229,7 +234,7 @@ class LMIPBootstrapper:
             ddl_path = self.ddl_dir / ddl_file
             
             if not ddl_path.exists():
-                self.logger.item_warning(f"{ddl_file:50} - File not found, skipping")
+                self.logger.item_warning(f"{ddl_file:50}", "File not found: skipping")
                 self.results["ddl"]["skipped"].append(ddl_file)
                 continue
             
@@ -240,15 +245,24 @@ class LMIPBootstrapper:
                     continue
                 
                 # Use SQLExecutor to execute DDL file
-                self.executor.execute_ddl(str(ddl_path))
-                
-                self.results["ddl"]["created"].append(ddl_file)
-                self.logger.item_success(f"{ddl_file:50} - Created")
+                result=self.executor.execute_ddl(ddl_path)
+                if result["success"]:
+                    self.results["ddl"]["created"].append(ddl_file)
+                    self.logger.item_success(f"{ddl_file:50}", "Created")
+                else:
+                    e=result["error"]
+                    self.results["ddl"]["failed"].append((ddl_file, str(e)))
+                    self.logger.item_error(f"{ddl_file:50}", f"Failed: {str(e)}")
+                    success = False
+                    print("\nFULL ERROR:")
+                    print(e)
                     
             except Exception as e:
                 self.results["ddl"]["failed"].append((ddl_file, str(e)))
-                self.logger.item_error(f"{ddl_file:50} - Failed: {str(e)[:50]}")
+                self.logger.item_error(f"{ddl_file:50}", f"Failed: {str(e)}")
                 success = False
+                print("\nFULL ERROR:")
+                print(e)
         
         # Summary
         self.logger.info(f"\nDDL Execution Summary:")
@@ -257,77 +271,7 @@ class LMIPBootstrapper:
         self.logger.info(f"  Failed:  {len(self.results['ddl']['failed'])}")
         
         return success
-    
-    def seed_metadata(self) -> bool:
-        """Seed metadata tables from CSV files (IDEMPOTENT using MERGE)"""
-        self.logger.section("STEP 3: Seeding Metadata Tables")
-        
-        if not self.metadata_dir.exists():
-            self.logger.error(f"Metadata directory not found: {self.metadata_dir}")
-            return False
-        
-        success = True
-        
-        for csv_file, schema, table in self.METADATA_CSV_FILES:
-            csv_path = self.metadata_dir / csv_file
-            
-            if not csv_path.exists():
-                self.logger.item_warning(f"{csv_file:40} - File not found, skipping")
-                self.results["metadata"]["skipped"].append(csv_file)
-                continue
-            
-            try:
-                # Read CSV file
-                with open(csv_path, 'r') as f:
-                    reader = csv.DictReader(f)
-                    rows = list(reader)
-                
-                if not rows:
-                    self.logger.item_warning(f"{csv_file:40} - Empty file, skipping")
-                    self.results["metadata"]["skipped"].append(csv_file)
-                    continue
-                
-                if self.dry_run:
-                    self.logger.info(f"🔍 {csv_file:40} - Would seed {len(rows)} records")
-                    self.results["metadata"]["skipped"].append(csv_file)
-                    continue
-                
-                # Add timestamps if not present
-                timestamp = datetime.now(timezone.utc).isoformat()
-                for row in rows:
-                    if 'created_at' not in row:
-                        row['created_at'] = timestamp
-                    if 'updated_at' not in row:
-                        row['updated_at'] = timestamp
-                
-                # Determine primary key column (first column typically)
-                columns = list(rows[0].keys())
-                pk_column = columns[0]
-                
-                # Use SQLExecutor to execute MERGE
-                self.executor.execute_merge(
-                    schema=schema,
-                    table=table,
-                    data=rows,
-                    merge_keys=[pk_column]
-                )
-                
-                self.results["metadata"]["seeded"].append((csv_file, len(rows)))
-                self.logger.item_success(f"{csv_file:40} - Seeded {len(rows)} records")
-                    
-            except Exception as e:
-                self.results["metadata"]["failed"].append((csv_file, str(e)))
-                self.logger.item_error(f"{csv_file:40} - Failed: {str(e)[:50]}")
-                success = False
-        
-        # Summary
-        self.logger.info(f"\nMetadata Seeding Summary:")
-        self.logger.info(f"  Seeded: {len(self.results['metadata']['seeded'])}")
-        self.logger.info(f"  Skipped: {len(self.results['metadata']['skipped'])}")
-        self.logger.info(f"  Failed:  {len(self.results['metadata']['failed'])}")
-        
-        return success
-    
+     
     def bootstrap(self) -> bool:
         """
         Execute complete bootstrap workflow.
@@ -367,14 +311,14 @@ class LMIPBootstrapper:
                 "  2. Run: python deployment/deploy_jobs.py\n"
                 "  3. Run: python deployment/validate_deployment.py",
                 title="SUCCESS",
-                style="success"
+                style="green"
             )
         else:
             self.logger.panel(
                 "⚠️  LMIP bootstrap completed with errors.\n"
                 "Review the logs above for details.",
                 title="WARNING",
-                style="warning"
+                style="yellow"
             )
         
         return all_success
