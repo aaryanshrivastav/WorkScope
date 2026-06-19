@@ -516,36 +516,36 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 
 **Tables:**
 
-#### sem_company_canonical
+#### inter_company_canonical
 * **Description:** Canonical company master
 * **Critical Columns:** canonical_company_id, canonical_company_name
 * **Validation Rules:** 2 (SM_COMPL_002, SM_UNIQ_001)
 * **SLA:** Completeness = 100%, Uniqueness = 100%
 
-#### sem_company_map
+#### inter_company_map
 * **Description:** Company name to canonical mapping
 * **Validation Rules:** 1 (SM_REF_002)
 
-#### sem_job_role_map
+#### inter_job_role_map
 * **Description:** Job title to role mapping
 * **Validation Rules:** 0
 
-#### sem_job_skill_evidence
+#### inter_job_skill_evidence
 * **Description:** Skill evidence extraction
 * **Validation Rules:** 0
 
-#### sem_sector_map
+#### inter_sector_map
 * **Description:** Job to sector mapping
 * **Critical Columns:** sector_map_id, enterprise_job_id, canonical_sector_code, canonical_sector_name
 * **Validation Rules:** 7 rules (completeness, uniqueness, freshness, referential integrity, sector classification)
 * **SLA:** Freshness < 48h, Completeness > 95%
 
-#### sem_skill_catalog
+#### inter_skill_catalog
 * **Description:** Canonical skill catalog
 * **Critical Columns:** canonical_skill_id, canonical_skill_name
 * **Validation Rules:** 2 (SM_COMPL_003, SM_UNIQ_002)
 
-#### sem_skill_graph_edges
+#### inter_skill_graph_edges
 * **Description:** Skill relationship graph
 * **Validation Rules:** 0
 
@@ -755,15 +755,15 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 | SV_FRESH_002 | Freshness | silver_jobs_current | ERROR | ALERT | Active jobs seen <7d |
 | SV_REF_001 | Referential Integrity | silver_jobs_current | ERROR | QUARANTINE | Valid bronze source reference |
 | **INTERMEDIATE LAYER** |
-| SM_COMPL_001 | Completeness | sem_sector_map | ERROR | QUARANTINE | Sector map complete |
-| SM_COMPL_002 | Completeness | sem_company_canonical | ERROR | QUARANTINE | Canonical company complete |
-| SM_COMPL_003 | Completeness | sem_skill_catalog | ERROR | QUARANTINE | Skill catalog complete |
-| SM_UNIQ_001 | Uniqueness | sem_company_canonical | ERROR | QUARANTINE | Unique canonical_company_id |
-| SM_UNIQ_002 | Uniqueness | sem_skill_catalog | ERROR | QUARANTINE | Unique canonical_skill_id |
-| SM_UNIQ_003 | Uniqueness | sem_sector_map | ERROR | QUARANTINE | Unique sector_map_id |
-| SM_FRESH_001 | Freshness | sem_sector_map | WARNING | LOG_WARNING | Recent intermediate mappings |
-| SM_REF_001 | Referential Integrity | sem_sector_map | ERROR | QUARANTINE | Valid silver job reference |
-| SM_REF_002 | Referential Integrity | sem_company_map | ERROR | QUARANTINE | Valid silver job reference |
+| SM_COMPL_001 | Completeness | inter_sector_map | ERROR | QUARANTINE | Sector map complete |
+| SM_COMPL_002 | Completeness | inter_company_canonical | ERROR | QUARANTINE | Canonical company complete |
+| SM_COMPL_003 | Completeness | inter_skill_catalog | ERROR | QUARANTINE | Skill catalog complete |
+| SM_UNIQ_001 | Uniqueness | inter_company_canonical | ERROR | QUARANTINE | Unique canonical_company_id |
+| SM_UNIQ_002 | Uniqueness | inter_skill_catalog | ERROR | QUARANTINE | Unique canonical_skill_id |
+| SM_UNIQ_003 | Uniqueness | inter_sector_map | ERROR | QUARANTINE | Unique sector_map_id |
+| SM_FRESH_001 | Freshness | inter_sector_map | WARNING | LOG_WARNING | Recent intermediate mappings |
+| SM_REF_001 | Referential Integrity | inter_sector_map | ERROR | QUARANTINE | Valid silver job reference |
+| SM_REF_002 | Referential Integrity | inter_company_map | ERROR | QUARANTINE | Valid silver job reference |
 | **GOLD LAYER** |
 | WH_COMPL_001 | Completeness | dim_company | ERROR | QUARANTINE | Company dimension complete |
 | WH_COMPL_002 | Completeness | dim_location | ERROR | QUARANTINE | Location dimension complete |
@@ -792,7 +792,7 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 | BIZ_002 | Business Logic | silver_jobs_current | ERROR | AUTO_FIX | Active flag consistency |
 | BIZ_003 | Business Logic | silver_jobs_current | ERROR | QUARANTINE | Posted before last seen |
 | BIZ_004 | Business Logic | silver_jobs_current | ERROR | QUARANTINE | Created before updated |
-| BIZ_005 | Business Logic | sem_sector_map | ERROR | QUARANTINE | Confidence in range 0-1 |
+| BIZ_005 | Business Logic | inter_sector_map | ERROR | QUARANTINE | Confidence in range 0-1 |
 | BIZ_006 | Business Logic | silver_jobs_current | WARNING | FLAG_FOR_REVIEW | Valid remote_type values |
 | BIZ_007 | Business Logic | silver_jobs_current | WARNING | LOG_WARNING | Valid dq_status values |
 | BIZ_008 | Business Logic | fact_salary | ERROR | QUARANTINE | Valid observation_type |
@@ -803,10 +803,10 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 | SECT_001 | Sector Classification | silver_jobs_current | WARNING | QUEUE_FOR_INTERMEDIATE_REVIEW | Missing sector assignment |
 | SECT_002 | Sector Classification | silver_jobs_current | WARNING | QUEUE_FOR_INTERMEDIATE_REVIEW | Low confidence sector |
 | SECT_003 | Sector Classification | silver_jobs_current | ERROR | CREATE_INTERMEDIATE_MAPPING | Sector without mapping |
-| SECT_004 | Sector Classification | sem_sector_map | ERROR | QUARANTINE | Invalid sector code |
+| SECT_004 | Sector Classification | inter_sector_map | ERROR | QUARANTINE | Invalid sector code |
 | SECT_005 | Sector Classification | silver_jobs_current | WARNING | LOG_WARNING | Missing assignment method |
-| SECT_006 | Sector Classification | sem_sector_map | WARNING | LOG_WARNING | Valid normalization method |
-| SECT_007 | Sector Classification | sem_sector_map | WARNING | LOG_WARNING | Valid taxonomy type |
+| SECT_006 | Sector Classification | inter_sector_map | WARNING | LOG_WARNING | Valid normalization method |
+| SECT_007 | Sector Classification | inter_sector_map | WARNING | LOG_WARNING | Valid taxonomy type |
 | SECT_008 | Sector Classification | dim_sector | WARNING | LOG_WARNING | Sector family consistency |
 | SECT_009 | Sector Classification | gold_company_activity | WARNING | LOG_WARNING | Hospitality coverage |
 | **SALARY VALIDATION** |
@@ -845,7 +845,7 @@ This document defines the comprehensive Data Quality (DQ) Framework for the Labo
 1. **silver_jobs_current** - 19 rules (most comprehensive)
 2. **fact_salary** - 11 rules
 3. **dim_location** - 11 rules
-4. **sem_sector_map** - 7 rules
+4. **inter_sector_map** - 7 rules
 5. **fact_job_postings** - 6 rules
 
 **Tables with No Validation:**

@@ -101,8 +101,8 @@ python deploy_all.py --skip-bootstrap --update
 
 **Responsibilities**:
 - Create 9 UC schemas (metadata, bronze, silver, intermediate, gold, reporting, audit, publish, quarantine)
-- Execute 40+ DDL files to create tables (dependency-aware)
-- Seed baseline metadata from CSV files (canonical roles, skills, sectors)
+- Execute 56 DDL files to create tables (dependency-aware)
+- Seed baseline metadata from CSV files into 4 taxonomy tables (see Taxonomy Tables section below)
 
 **Idempotent**: ✅ Safe to rerun (uses `CREATE IF NOT EXISTS` and `MERGE`)
 
@@ -125,8 +125,51 @@ python bootstrap.py --dry-run
 
 **Output**:
 - Creates 9 schemas
-- Creates 40+ tables across all layers
-- Seeds ~200 metadata records
+- Creates 56 tables across all layers
+- Seeds ~200 metadata records into 4 taxonomy tables
+
+#### Taxonomy Tables & CSV Seeding
+
+Bootstrap automatically seeds 4 governed taxonomy tables from CSV files in the `metadata/` directory:
+
+**Taxonomy Tables**:
+1. **`metadata.taxonomy_sectors`** ← `metadata/sectors.csv`
+   - 19 sector records (Technology, Hospitality, Healthcare, Finance, etc.)
+   - Hierarchical sector taxonomy with NAICS mapping
+   - Used by: inter_sector_map → dim_sector
+
+2. **`metadata.taxonomy_role_families`** ← `metadata/role_families.csv`
+   - 13 role family records (Engineering, Data & Analytics, Operations, etc.)
+   - Role groupings within sectors
+   - Used by: inter_job_role_map → dim_role
+
+3. **`metadata.taxonomy_role_canonical`** ← `metadata/canonical_roles.csv`
+   - 22 canonical role records (Software Engineer, Data Scientist, etc.)
+   - Master role taxonomy for job title normalization
+   - Links to role families and sectors
+   - Used by: inter_job_role_map → dim_role
+
+4. **`metadata.taxonomy_skill_catalog`** ← `metadata/canonical_skills.csv`
+   - 26 canonical skill records (Python, SQL, Customer Service, etc.)
+   - Master skill catalog with categories and aliases
+   - Used by: inter_skill_catalog → dim_skill
+
+**Seeding Logic**:
+- Uses `MERGE` operations for idempotency (safe to rerun)
+- CSV records are matched on natural keys (sector_key, role_key, skill_key)
+- New records are inserted, existing records are updated
+- Taxonomy updates propagate through intermediate layer to gold dimensions
+
+**CSV File Locations**:
+```
+LMIP/metadata/
+├── sectors.csv                # 19 sectors
+├── role_families.csv          # 13 role families
+├── canonical_roles.csv        # 22 roles
+└── canonical_skills.csv       # 26 skills
+```
+
+> **Note**: For detailed taxonomy schema, seeding implementation, and dependency chain documentation, see [docs/changelog/2026-06-17-taxonomy-tables-migration.md](../docs/changelog/2026-06-17-taxonomy-tables-migration.md).
 
 ---
 

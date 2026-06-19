@@ -11,23 +11,43 @@ LMIP/sql/
 ├── README.md                 # This file
 ├── bootstrap/                # Schema initialization scripts
 │   └── 00_create_schemas.sql
-├── ddl/                      # CREATE TABLE statements (39 files)
+├── ddl/                      # CREATE TABLE statements (56 files)
+│   ├── audit_*.sql           # Audit schema DDL (5 files)
 │   ├── bronze_*.sql          # Bronze layer DDL (3 files)
-│   ├── silver_*.sql          # Silver layer DDL (5 files)
-│   ├── semantic_*.sql        # Semantic layer DDL (6 files)
-│   ├── warehouse_*.sql       # Warehouse layer DDL (14 files)
-│   └── gold_*.sql            # Gold layer DDL (11 files)
+│   ├── gold_*.sql            # Gold dimensional model DDL (14 files)
+│   ├── intermediate_*.sql    # Intermediate layer DDL (6 files)
+│   ├── metadata_*.sql        # Metadata schema DDL (7 files)
+│   ├── publish_*.sql         # Publish schema DDL (2 files)
+│   ├── quarantine_*.sql      # Quarantine schema DDL (2 files)
+│   ├── reporting_*.sql       # Reporting marts DDL (11 files)
+│   └── silver_*.sql          # Silver layer DDL (6 files)
 ├── views/                    # CREATE VIEW statements (11 files)
 │   └── view_gold_*.sql       # Gold layer analytical views
-└── validations/              # Data quality validation queries (5 files)
-    ├── 01_row_count_validation.sql
-    ├── 02_null_validation.sql
-    ├── 03_referential_integrity.sql
-    ├── 04_duplicate_detection.sql
-    └── 05_gold_mart_validation.sql
+└── validations/              # Data quality validation queries (13 files)
+    └── See validations/README.md for dual-track numbering system
 ```
 
 ## Layer Architecture
+
+### Metadata Layer
+**Purpose**: System configuration, pipeline control, and governed taxonomy
+
+**Tables**:
+* `metadata_pipeline_run_control` - Pipeline execution orchestration
+* `metadata_source_config` - Source system configuration
+* `metadata_staging_to_current_batches` - Batch tracking
+* `metadata_taxonomy_sectors` - Governed sector taxonomy (19 sectors)
+* `metadata_taxonomy_role_families` - Role family groupings (13 families)
+* `metadata_taxonomy_role_canonical` - Canonical role definitions (22 roles)
+* `metadata_taxonomy_skill_catalog` - Master skill catalog (26 skills)
+
+**Characteristics**:
+* Seeded from CSV files during bootstrap (taxonomy tables)
+* Idempotent MERGE operations for taxonomy data
+* Referenced by intermediate and gold layers
+* Audit timestamps (created_at, updated_at)
+
+> **⚠️ Note**: Formal schema contracts for the four taxonomy tables (taxonomy_sectors, taxonomy_role_families, taxonomy_role_canonical, taxonomy_skill_catalog) are pending documentation. Current implementations are based on CSV file structures and DDL definitions. See [docs/changelog/2026-06-17-taxonomy-tables-migration.md](../docs/changelog/2026-06-17-taxonomy-tables-migration.md) for interim schema documentation and seeding logic.
 
 ### Bronze Layer
 **Purpose**: Immutable raw data from source systems
@@ -147,27 +167,39 @@ This creates six schemas:
 Execute DDL files in layer order:
 
 ```bash
-# 1. Bronze layer (3 files)
+# 1. Metadata schema (7 files)
+LMIP/sql/ddl/metadata_*.sql
+
+# 2. Bronze layer (3 files)
 LMIP/sql/ddl/bronze_*.sql
 
-# 2. Silver layer (5 files)
+# 3. Silver layer (6 files)
 LMIP/sql/ddl/silver_*.sql
 
-# 3. Semantic layer (6 files)
-LMIP/sql/ddl/semantic_*.sql
+# 4. Intermediate layer (6 files)
+LMIP/sql/ddl/intermediate_*.sql
 
-# 4. Warehouse layer (14 files)
-LMIP/sql/ddl/warehouse_*.sql
-
-# 5. Gold layer (11 files)
+# 5. Gold dimensional model (14 files)
 LMIP/sql/ddl/gold_*.sql
+
+# 6. Reporting marts (11 files)
+LMIP/sql/ddl/reporting_*.sql
+
+# 7. Audit schema (5 files)
+LMIP/sql/ddl/audit_*.sql
+
+# 8. Publish schema (2 files)
+LMIP/sql/ddl/publish_*.sql
+
+# 9. Quarantine schema (2 files)
+LMIP/sql/ddl/quarantine_*.sql
 ```
 
 **Important**: Execute in order due to referential dependencies.
 
 ### 3. Create Views
 
-After warehouse tables are populated, create Gold layer views:
+After Gold dimensional model tables are populated, create analytical views:
 
 ```bash
 # Execute all view definitions
@@ -197,65 +229,7 @@ LMIP/sql/validations/05_gold_mart_validation.sql
 
 ## Validation Descriptions
 
-### 01_row_count_validation.sql
-**Purpose**: Verify all tables have data
-
-**Output**: Table with row counts by layer
-
-**Use Case**: 
-* Detect empty tables
-* Monitor data volume trends
-* Verify ETL pipeline execution
-
-**Dependencies**: All tables across all layers
-
-### 02_null_validation.sql
-**Purpose**: Validate NOT NULL constraints on critical columns
-
-**Output**: List of null violations by table and column
-
-**Use Case**:
-* Enforce data quality rules
-* Identify missing required fields
-* Track data completeness
-
-**Dependencies**: All tables with NOT NULL constraints
-
-### 03_referential_integrity.sql
-**Purpose**: Validate foreign key relationships
-
-**Output**: List of orphaned records (child records missing parent)
-
-**Use Case**:
-* Ensure dimension lookups succeed
-* Detect broken relationships
-* Verify ETL load order
-
-**Dependencies**: All fact and dimension tables with FK relationships
-
-### 04_duplicate_detection.sql
-**Purpose**: Detect duplicate records based on primary and business keys
-
-**Output**: Tables with duplicate key violations
-
-**Use Case**:
-* Verify deduplication logic
-* Identify SCD Type 2 violations
-* Monitor data quality
-
-**Dependencies**: All tables with primary key or unique constraints
-
-### 05_gold_mart_validation.sql
-**Purpose**: Validate business logic and aggregations in Gold layer
-
-**Output**: List of business rule violations
-
-**Use Case**:
-* Verify aggregation correctness
-* Validate calculated metrics
-* Ensure data integrity end-to-end
-
-**Dependencies**: Gold views and their warehouse source tables
+For comprehensive validation documentation including the dual-track numbering system (legacy 01-05 and enhanced 01-08 tracks), see [validations/README.md](./validations/README.md).
 
 ## Key Features
 
@@ -345,7 +319,7 @@ For questions about these SQL artifacts:
 
 * **Contract Version**: 1.0
 * **Generated Date**: 2026-06-07
-* **Total Tables**: 39
+* **Total DDL Files**: 56
 * **Total Views**: 11
-* **Total Validations**: 5
-* **Architecture**: Bronze → Silver → Semantic → Warehouse → Gold
+* **Total Validations**: 13 (dual-track system)
+* **Architecture**: Metadata → Bronze → Silver → Intermediate → Gold → Reporting (+ Audit, Publish, Quarantine)

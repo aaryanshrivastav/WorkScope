@@ -509,13 +509,164 @@ tests/
     └── coverage-*.xml                 # Coverage reports
 ```
 
+## Quick Start
+
+### Essential Commands
+
+```bash
+# Run all tests
+pytest
+
+# Run highest priority (CDC + Identity) - MUST PASS
+pytest -m "cdc or identity"
+
+# Run with coverage
+pytest --cov=LMIP --cov-report=html
+
+# Parallel execution
+pytest -n auto
+
+# Show slowest tests
+pytest --durations=10
+```
+
+### Run by Layer
+
+```bash
+pytest tests/notebooks/test_bronze_notebooks.py
+pytest tests/notebooks/test_silver_notebooks.py
+pytest tests/notebooks/test_intermediate_notebooks.py
+pytest tests/notebooks/test_warehouse_notebooks.py
+```
+
+### Common Options
+
+```bash
+pytest -v           # Verbose output
+pytest -s           # Show print statements
+pytest -x           # Stop on first failure
+pytest --lf         # Run last failed only
+pytest -m "not slow"  # Skip slow tests
+```
+
+## Implementation Summary
+
+### Test Metrics
+
+**Unit Tests (Logic Validation):**
+* test_cdc_hash_logic.py — ~250 lines, 17 test methods
+* test_identity_matching.py — ~300 lines, 18 test methods
+* test_sector_assignment.py — ~200 lines, 17 test methods
+* test_scd2_key_generation.py — ~250 lines, 20 test methods
+* test_quarantine_routing.py — ~180 lines, 16 test methods
+* test_export_bundle_manifest.py — ~150 lines, 26 test methods
+* **Total:** ~1,330 lines, 114 test methods
+
+**Notebook Integration Tests:**
+* test_bronze_notebooks.py — 268 lines, 6 notebooks covered
+* test_silver_notebooks.py — 277 lines, 9 notebooks covered
+* test_intermediate_notebooks.py — 172 lines, 7 notebooks covered
+* test_warehouse_notebooks.py — 206 lines, 14 notebooks covered
+* test_init_notebooks.py — 115 lines, 5 notebooks covered
+* test_publish_notebooks.py — 161 lines, 4 notebooks covered
+* **Total:** ~1,199 lines, 45 notebooks covered
+
+**Workflow Integration Tests:**
+* test_workflows_integration.py — 8 workflow definitions
+
+### Coverage Goals
+
+| Module | Target Coverage |
+|--------|-----------------|
+| CDC Hash Logic | 95%+ |
+| Identity Matching | 95%+ |
+| Sector Assignment | 90%+ |
+| SCD2 Key Generation | 90%+ |
+| Quarantine Routing | 85%+ |
+| Export Manifest | 85%+ |
+| Notebooks | 70%+ |
+| Workflows | 70%+ |
+
+## Pre-Commit Checklist
+
+- [ ] Run highest priority tests: `pytest -m "cdc or identity"`
+- [ ] Run affected layer tests: `pytest tests/notebooks/test_<layer>_notebooks.py`
+- [ ] Check coverage: `pytest --cov=LMIP --cov-report=term`
+- [ ] Run workflow validation: `pytest tests/workflows/ -m "not slow"`
+- [ ] All tests pass ✅
+
+## Troubleshooting
+
+### Test Discovery Issues
+
+```bash
+# List all tests
+pytest --collect-only
+
+# List tests matching pattern
+pytest --collect-only -k "bronze"
+```
+
+### Spark Issues
+
+```bash
+# Check Java version (needs Java 11 or 17)
+java -version
+
+# Set JAVA_HOME
+export JAVA_HOME=/path/to/java
+
+# Clear Spark metastore
+rm -rf metastore_db/ spark-warehouse/
+```
+
+### Import Errors
+
+```bash
+# Add to PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
+
+### Tests Hanging
+
+```bash
+# Add timeout
+pytest --timeout=60
+
+# Show detailed output
+pytest -vvv -s
+```
+
+### Getting Help
+
+```bash
+# Show pytest help
+pytest --help
+
+# Show markers
+pytest --markers
+
+# Show fixtures
+pytest --fixtures
+```
+
+## CI/CD Quick Facts
+
+* **GitHub Actions:** Runs on push/PR to main, develop, feature/*
+* **Test Stages:** Highest → High → Medium → Notebook → Workflow → Full
+* **Quality Gates:** Highest risk MUST PASS, coverage >= 70%
+* **Artifacts:** Test reports, coverage, logs (30-day retention)
+* **Databricks Jobs:** 3 test workflows (unit, notebook, workflow)
+* **Python Versions:** 3.10 and 3.11
+
 ## Resources
 
-* [Full Testing Guide](../docs/testing-guide.md)
 * [Workflow Test Documentation](workflows/README.md)
 * [Rollback Mechanism](../docs/rollback-mechanism.md)
 * [pytest Documentation](https://docs.pytest.org/)
 * [PySpark Testing Guide](https://spark.apache.org/docs/latest/api/python/user_guide/testing.html)
+
+> **Note:** For complete testing strategy and contribution guidelines, see this document. The previous docs/testing-guide.md file has been consolidated into this README.
 
 ## Contact
 

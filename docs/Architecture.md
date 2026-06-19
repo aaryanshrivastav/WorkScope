@@ -60,7 +60,7 @@
 │  • Company canonicalization                                     │
 │  • Sector normalization                                         │
 │  • Skill graph construction                                     │
-│  Tables: sem_job_role_map, sem_company_map, sem_skill_catalog   │
+│  Tables: inter_job_role_map, inter_company_map, inter_skill_catalog   │
 └──────────────────────┬──────────────────────────────────────────┘
                        │ Dimensional Modeling
                        │ Star Schema
@@ -172,11 +172,11 @@
 * **Deterministic-First**: Prefer rules over ML for predictability
 
 **Tables**:
-* `workspace.intermediate.sem_job_role_map` - Job title → canonical role
-* `workspace.intermediate.sem_company_map` - Company name → canonical entity
-* `workspace.intermediate.sem_sector_map` - Industry sector normalization
-* `workspace.intermediate.sem_skill_catalog` - Canonical skill taxonomy
-* `workspace.intermediate.sem_skill_graph` - Skill relationships (co-occurrence, prerequisite)
+* `workspace.intermediate.inter_job_role_map` - Job title → canonical role
+* `workspace.intermediate.inter_company_map` - Company name → canonical entity
+* `workspace.intermediate.inter_sector_map` - Industry sector normalization
+* `workspace.intermediate.inter_skill_catalog` - Canonical skill taxonomy
+* `workspace.intermediate.inter_skill_graph` - Skill relationships (co-occurrence, prerequisite)
 
 **Key Operations**:
 1. **Role Mapping**: Dictionary → Regex → LLM fallback (optional)

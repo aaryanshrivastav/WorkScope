@@ -16,7 +16,7 @@ Implement a batch-level rollback mechanism for Bronze layer batch processing wit
 **1. Schema Enhancement** ✅
 * **File:** `/LMIP/sql/ddl/bronze_dedupe_tracking.sql`
 * **Changes:** Added `batch_status` column (VARCHAR, default 'PROCESSED', supports 'ROLLED_BACK')
-* **Integration:** Added to `DDL_EXECUTION_ORDER` in `/LMIP/deployment/init.py`
+* **Integration:** Added to `DDL_EXECUTION_ORDER` in `/LMIP/deployment/bootstrap.py`
 
 **2. Rollback Script** ✅
 * **File:** `/LMIP/notebooks/bronze/bronze_rollback_batch.py`
@@ -194,7 +194,7 @@ LMIP/
 │   └── recovery.json                          ✅ Recovery workflow with rollback
 │
 ├── deployment/
-│   └── init.py                                ✅ DDL execution order
+│   └── bootstrap.py                           ✅ DDL execution order
 │
 ├── docs/
 │   ├── rollback-mechanism.md                  ✅ Rollback documentation

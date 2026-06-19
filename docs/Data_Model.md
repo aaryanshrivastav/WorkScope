@@ -15,11 +15,23 @@ The LMIP data model implements a **multi-layered medallion architecture** with i
 2. Silver: Cleansed and standardized data
 3. Intermediate: Enriched canonical entities
 4. Gold: Star schema dimensional model
-5. Gold: Pre-aggregated BI marts
+5. Reporting: Pre-aggregated BI marts
+6. Publish: Export manifests and consumer tracking
 
 ---
 
 ## Key Tables by Layer
+
+### Metadata Layer
+* `metadata.metadata_pipeline_run_control` - Pipeline execution orchestration
+* `metadata.metadata_source_config` - Data source configurations
+* `metadata.metadata_staging_to_current_batches` - Batch tracking
+* `metadata.taxonomy_sectors` - Governed sector taxonomy (19 sectors)
+* `metadata.taxonomy_role_families` - Role family groupings (13 families)
+* `metadata.taxonomy_role_canonical` - Canonical role definitions (22 roles)
+* `metadata.taxonomy_skill_catalog` - Master skill catalog (26 skills)
+
+> **⚠️ Schema Contract Status**: Formal schema contracts for the four taxonomy tables (taxonomy_sectors, taxonomy_role_families, taxonomy_role_canonical, taxonomy_skill_catalog) are pending documentation. Current implementations are based on CSV file structures and DDL definitions. For interim schema documentation, see [changelog/2026-06-17-taxonomy-tables-migration.md](changelog/2026-06-17-taxonomy-tables-migration.md).
 
 ### Bronze Layer
 * `bronze.bronze_job_snapshot` - Raw API responses (immutable)
@@ -31,9 +43,9 @@ The LMIP data model implements a **multi-layered medallion architecture** with i
 * `silver.silver_skill_mapping` - Extracted skills
 
 ### Intermediate Layer
-* `intermediate.sem_job_role_map` - Title → canonical role mapping
-* `intermediate.sem_company_canonical` - Company master
-* `intermediate.sem_skill_catalog` - Master skill taxonomy
+* `intermediate.inter_job_role_map` - Title → canonical role mapping
+* `intermediate.inter_company_canonical` - Company master
+* `intermediate.inter_skill_catalog` - Master skill taxonomy
 
 ### Gold Layer
 * **Dimensions (10)**: dim_date, dim_source, dim_sector, dim_skill, dim_role, dim_location, dim_company, dim_company_alias, dim_job_scd2
