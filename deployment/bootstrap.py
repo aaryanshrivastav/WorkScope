@@ -59,6 +59,12 @@ class LMIPBootstrapper:
         "metadata_pipeline_run_control.sql",
         "metadata_staging_to_current_batches.sql",
         
+        # Taxonomy tables (metadata layer)
+        "metadata_taxonomy_sectors.sql",
+        "metadata_taxonomy_role_families.sql",
+        "metadata_taxonomy_role_canonical.sql",
+        "metadata_taxonomy_skill_catalog.sql",
+        
         # Audit and quarantine
         "audit_audit_pipeline_runs.sql",
         "audit_audit_dq_results.sql",
@@ -272,6 +278,115 @@ class LMIPBootstrapper:
         
         return success
      
+    
+    def seed_metadata(self) -> bool:
+        """Seed metadata tables from CSV files"""
+        self.logger.section("STEP 3: Seeding Metadata")
+        
+        if not self.metadata_dir.exists():
+            self.logger.error(f"Metadata directory not found: {self.metadata_dir}")
+            return False
+        
+        success = True
+        
+        for csv_file, schema, table in self.METADATA_CSV_FILES:
+            csv_path = self.metadata_dir / csv_file
+            full_table_name = f"{self.catalog}.{schema}.{table}"
+            
+            if not csv_path.exists():
+                self.logger.item_warning(f"{csv_file:40}", "File not found - skipping")
+                self.results["metadata"]["skipped"].append(csv_file)
+                continue
+            
+            try:
+                if self.dry_run:
+                    self.logger.info(f"🔍 {csv_file:40} - Would seed {full_table_name}")
+                    self.results["metadata"]["skipped"].append(csv_file)
+                    continue
+                
+                # Read CSV file
+                with open(csv_path, 'r') as f:
+                    reader = csv.DictReader(f)
+                    rows = list(reader)
+                
+                if not rows:
+                    self.logger.item_warning(f"{csv_file:40}", "Empty CSV - skipping")
+                    self.results["metadata"]["skipped"].append(csv_file)
+                    continue
+                
+                # Add timestamps to each row
+                now = datetime.now(timezone.utc)
+                for row in rows:
+                    row['created_at'] = now.isoformat()
+                    row['updated_at'] = now.isoformat()
+                
+                # Convert to SQL INSERT statements
+                columns = list(rows[0].keys())
+                col_list = ", ".join(columns)
+                
+                # Build VALUES clauses
+                values_clauses = []
+                for row in rows:
+                    # Escape single quotes and build value list
+                    values = []
+                    for col in columns:
+                        val = row[col]
+                        if val is None or val == '':
+                            values.append('NULL')
+                        else:
+                            # Escape single quotes
+                            val_escaped = str(val).replace("'", "''")
+                            values.append(f"'{val_escaped}'")
+                    values_clauses.append(f"({', '.join(values)})")
+                
+                # Build MERGE statement for upsert
+                merge_sql = f"""
+                MERGE INTO {full_table_name} AS target
+                USING (
+                    SELECT * FROM VALUES
+                    {', '.join(values_clauses)}
+                    AS seed_data({col_list})
+                ) AS source
+                ON {self._get_merge_condition(table)}
+                WHEN MATCHED THEN UPDATE SET *
+                WHEN NOT MATCHED THEN INSERT *
+                """
+                
+                # Execute merge
+                result = self.executor.execute_sql(merge_sql)
+                
+                if result["success"]:
+                    self.results["metadata"]["seeded"].append(csv_file)
+                    self.logger.item_success(f"{csv_file:40}", f"Seeded {len(rows)} records")
+                else:
+                    error_msg = result.get("error", "Unknown error")
+                    self.results["metadata"]["failed"].append((csv_file, str(error_msg)))
+                    self.logger.item_error(f"{csv_file:40}", f"Failed: {str(error_msg)[:50]}")
+                    success = False
+                    
+            except Exception as e:
+                self.results["metadata"]["failed"].append((csv_file, str(e)))
+                self.logger.item_error(f"{csv_file:40}", f"Failed: {str(e)[:50]}")
+                success = False
+        
+        # Summary
+        self.logger.info(f"\nMetadata Seeding Summary:")
+        self.logger.info(f"  Seeded:  {len(self.results['metadata']['seeded'])}")
+        self.logger.info(f"  Skipped: {len(self.results['metadata']['skipped'])}")
+        self.logger.info(f"  Failed:  {len(self.results['metadata']['failed'])}")
+        
+        return success
+    
+    def _get_merge_condition(self, table: str) -> str:
+        """Get merge condition based on table name"""
+        merge_keys = {
+            "taxonomy_sectors": "target.sector_key = source.sector_key",
+            "taxonomy_role_families": "target.family_key = source.family_key",
+            "taxonomy_role_canonical": "target.role_key = source.role_key",
+            "taxonomy_skill_catalog": "target.skill_key = source.skill_key"
+        }
+        return merge_keys.get(table, "target.id = source.id")
+    
     def bootstrap(self) -> bool:
         """
         Execute complete bootstrap workflow.

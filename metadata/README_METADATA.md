@@ -142,10 +142,10 @@ HOSP_OPERA,Opera PMS,Technical,HOSP,"opera|opera pms|property management"
 
 1. ✅ Create metadata files (sectors, roles, skills)
 2. ✅ Create metadata loader notebook
-3. ⬜ Refactor `inter_sector_normalize` to load from `sectors.csv`
-4. ⬜ Refactor `inter_role_map` to load from `canonical_roles.csv`
-5. ⬜ Refactor `inter_skill_catalog_sync` to load from `canonical_skills.csv`
-6. ⬜ Update dim tables in gold layer to reflect sector taxonomy
+3. ✅ Refactor `inter_sector_normalize` to load from `workspace.metadata.taxonomy_sectors` table
+4. ✅ Refactor `inter_role_map` to load from `workspace.metadata.taxonomy_role_canonical` table
+5. ✅ Refactor `inter_skill_catalog_sync` to load from `workspace.metadata.taxonomy_skill_catalog` table
+6. 🔄 Update dim tables in gold layer to reflect sector taxonomy (IN PROGRESS - DDL files complete, notebooks updating)
 7. ⬜ Design Knowledge Graph ontology using this taxonomy
 
 ### Data Source Strategy
@@ -168,12 +168,3 @@ Your current sources (Remotive, ArbeitNow) are tech-heavy. That's fine.
 1. **Knowledge Graph ready** - the ontology is already defined
 2. **Scalable** - add sectors without refactoring
 3. **Governed** - single source of truth for canonical names
-4. **Portable** - taxonomy is data, not code
-5. **Future-proof** - when Healthcare data arrives, the platform is ready
-
-## See Also
-
-* [metadata_loader notebook](../notebooks/intermediate/metadata_loader.ipynb) - Reference implementation
-* [inter_sector_normalize](../notebooks/intermediate/inter_sector_normalize.ipynb) - Needs refactor
-* [inter_role_map](../notebooks/intermediate/inter_role_map.ipynb) - Needs refactor
-* [inter_skill_catalog_sync](../notebooks/intermediate/inter_skill_catalog_sync.ipynb) - Needs refactor

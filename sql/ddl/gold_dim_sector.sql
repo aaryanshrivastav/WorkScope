@@ -3,23 +3,27 @@
 -- Layer: GOLD
 -- Description: Industry sector dimension with hierarchical taxonomy
 -- ============================================================================
--- Purpose: Physical table definition for dim_sector
--- Dependencies: workspace.intermediate.inter_sector_map
--- Consumers: workspace.warehouse.dim_company, workspace.warehouse.dim_job
+-- Purpose: Physical table definition for dim_sector with taxonomy integration
+-- Dependencies: workspace.metadata.taxonomy_sectors
+-- Consumers: workspace.gold.dim_company, workspace.gold.dim_job, workspace.gold.dim_role
+-- Expected Output: Table created with 12 columns including taxonomy references
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.dim_sector (
   sector_sk BIGINT NOT NULL COMMENT 'Surrogate key',
-  sector_name STRING NOT NULL COMMENT 'Sector name',
-  sector_category STRING COMMENT 'Parent sector category',
-  sector_family STRING COMMENT 'Sector family grouping (e.g., HOSPITALITY, TECHNOLOGY)',
+  sector_key STRING NOT NULL COMMENT 'Natural key from taxonomy (e.g., TECH, HOSP, HEAL)',
+  sector_name STRING NOT NULL COMMENT 'Sector display name',
+  parent_sector_sk BIGINT COMMENT 'FK to parent sector (NULL for top-level sectors)',
+  parent_sector_key STRING COMMENT 'Parent sector natural key from taxonomy',
+  naics_code STRING COMMENT 'NAICS classification code',
+  sector_level INT COMMENT 'Hierarchy depth (1 = top-level, 2 = sub-sector, etc.)',
   sector_description STRING COMMENT 'Sector description',
   is_active BOOLEAN NOT NULL COMMENT 'Active flag',
-  created_at TIMESTAMP NOT NULL COMMENT 'Creation timestamp'
-
-  -- PRIMARY KEY removed for Databricks Delta compatibility
-  -- Uniqueness of sector_sk must be enforced through
-  -- dimension loading and validation processes
+  created_at TIMESTAMP NOT NULL COMMENT 'Record creation timestamp',
+  updated_at TIMESTAMP COMMENT 'Last update timestamp',
+  taxonomy_updated_at TIMESTAMP COMMENT 'Last taxonomy sync timestamp'
+,
+  PRIMARY KEY (sector_sk)
 )
 USING DELTA
 COMMENT 'Industry sector dimension with hierarchical taxonomy'

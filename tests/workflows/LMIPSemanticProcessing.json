@@ -10,7 +10,7 @@
       "task_key": "Company_Canonicalize",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/semantic_company_canonicalize",
+        "notebook_path": "${workspace_root}/notebooks/semantic/semantic_company_canonicalize",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -21,7 +21,7 @@
       "task_key": "Role_Map",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/semantic_role_map",
+        "notebook_path": "${workspace_root}/notebooks/semantic/semantic_role_map",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -40,7 +40,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/semantic_sector_normalize",
+        "notebook_path": "${workspace_root}/notebooks/semantic/semantic_sector_normalize",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -56,7 +56,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/semantic_skill_catalog_sync",
+        "notebook_path": "${workspace_root}/notebooks/semantic/semantic_skill_catalog_sync",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -72,7 +72,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/semantic/semantic_skill_graph_build",
+        "notebook_path": "${workspace_root}/notebooks/semantic/semantic_skill_graph_build",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -88,7 +88,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "rows_read": "0",
@@ -108,7 +108,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

@@ -17,7 +17,7 @@
       "task_key": "Arbeit_Ingestor",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/ingestion/ingest_arbeitnow",
+        "notebook_path": "${workspace_root}/notebooks/ingestion/ingest_arbeitnow",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -28,7 +28,7 @@
       "task_key": "Remotive_Ingestor",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/ingestion/ingest_remotive",
+        "notebook_path": "${workspace_root}/notebooks/ingestion/ingest_remotive",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -47,7 +47,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/bronze/bronze_write_api_response_log",
+        "notebook_path": "${workspace_root}/notebooks/bronze/bronze_write_api_response_log",
         "base_parameters": {
           "catalog": "workspace",
           "schema": "bronze"
@@ -67,7 +67,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/bronze/bronze_write_job_snapshot",
+        "notebook_path": "${workspace_root}/notebooks/bronze/bronze_write_job_snapshot",
         "base_parameters": {
           "catalog": "workspace",
           "schema": "bronze",
@@ -93,7 +93,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/bronze/bronze_dedupe_raw_payload",
+        "notebook_path": "${workspace_root}/notebooks/bronze/bronze_dedupe_raw_payload",
         "base_parameters": {
           "catalog": "workspace",
           "schema": "bronze"
@@ -113,7 +113,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/bronze/bronze_finalize_batch",
+        "notebook_path": "${workspace_root}/notebooks/bronze/bronze_finalize_batch",
         "base_parameters": {
           "catalog": "workspace",
           "schema": "bronze"
@@ -133,7 +133,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "pipeline_name": "LMIPDataIngestion_TEST",
@@ -160,7 +160,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

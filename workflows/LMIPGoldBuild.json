@@ -17,10 +17,10 @@
   "max_concurrent_runs": 1,
   "tasks": [
     {
-      "task_key": "Gold_Salary_Trends",
+      "task_key": "Reporting_Salary_Trends",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_salary_trends",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_salary_trends",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
@@ -30,10 +30,10 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Skill_Demand",
+      "task_key": "Reporting_Skill_Demand",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_skill_demand",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_skill_demand",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
@@ -43,10 +43,10 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Hiring_Trends",
+      "task_key": "Reporting_Hiring_Trends",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_hiring_trends",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_hiring_trends",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -55,10 +55,10 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Company_Hiring",
+      "task_key": "Reporting_Company_Hiring",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_company_hiring",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_company_hiring",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -67,10 +67,10 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Location_Trends",
+      "task_key": "Reporting_Location_Trends",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_location_trends",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_location_trends",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -79,10 +79,10 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Sector_Overview",
+      "task_key": "Reporting_Sector_Overview",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_sector_overview",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_sector_overview",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -91,21 +91,21 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Pipeline_Health",
+      "task_key": "Reporting_Pipeline_Health",
       "depends_on": [
         {
-          "task_key": "Gold_Salary_Trends"
+          "task_key": "Reporting_Salary_Trends"
         },
         {
-          "task_key": "Gold_Skill_Demand"
+          "task_key": "Reporting_Skill_Demand"
         },
         {
-          "task_key": "Gold_Hiring_Trends"
+          "task_key": "Reporting_Hiring_Trends"
         }
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_pipeline_health",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_pipeline_health",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 1200,
@@ -114,15 +114,15 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Hiring_Activity",
+      "task_key": "Reporting_Hiring_Activity",
       "depends_on": [
         {
-          "task_key": "Gold_Sector_Overview"
+          "task_key": "Reporting_Sector_Overview"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_hiring_activity",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_hiring_activity",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 1800,
@@ -131,15 +131,15 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Skill_Demand_By_Sector",
+      "task_key": "Reporting_Skill_Demand_By_Sector",
       "depends_on": [
         {
-          "task_key": "Gold_Skill_Demand"
+          "task_key": "Reporting_Skill_Demand"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_skill_demand_by_sector",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_skill_demand_by_sector",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 1800,
@@ -148,15 +148,15 @@
       "environment_key": "Default"
     },
     {
-      "task_key": "Gold_Company_Activity",
+      "task_key": "Reporting_Company_Activity",
       "depends_on": [
         {
-          "task_key": "Gold_Company_Hiring"
+          "task_key": "Reporting_Company_Hiring"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/reporting/reporting_company_activity",
+        "notebook_path": "${workspace_root}/notebooks/reporting/reporting_company_activity",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 1800,
@@ -168,29 +168,29 @@
       "task_key": "Log_Pipeline_Execution",
       "depends_on": [
         {
-          "task_key": "Gold_Pipeline_Health"
+          "task_key": "Reporting_Pipeline_Health"
         },
         {
-          "task_key": "Gold_Hiring_Activity"
+          "task_key": "Reporting_Hiring_Activity"
         },
         {
-          "task_key": "Gold_Skill_Demand_By_Sector"
+          "task_key": "Reporting_Skill_Demand_By_Sector"
         },
         {
-          "task_key": "Gold_Company_Activity"
+          "task_key": "Reporting_Company_Activity"
         },
         {
-          "task_key": "Gold_Location_Trends"
+          "task_key": "Reporting_Location_Trends"
         }
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "pipeline_name": "LMIP_Gold_Build",
           "run_id": "{{run_id}}",
-          "status": "{{tasks.Gold_Pipeline_Health.state}}",
+          "status": "{{tasks.Reporting_Pipeline_Health.state}}",
           "start_time": "{{start_time}}",
           "rows_read": "0",
           "rows_written": "0",
@@ -207,24 +207,24 @@
       "task_key": "Notify_On_Failure",
       "depends_on": [
         {
-          "task_key": "Gold_Pipeline_Health"
+          "task_key": "Reporting_Pipeline_Health"
         },
         {
-          "task_key": "Gold_Hiring_Activity"
+          "task_key": "Reporting_Hiring_Activity"
         },
         {
-          "task_key": "Gold_Skill_Demand_By_Sector"
+          "task_key": "Reporting_Skill_Demand_By_Sector"
         },
         {
-          "task_key": "Gold_Company_Activity"
+          "task_key": "Reporting_Company_Activity"
         },
         {
-          "task_key": "Gold_Location_Trends"
+          "task_key": "Reporting_Location_Trends"
         }
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

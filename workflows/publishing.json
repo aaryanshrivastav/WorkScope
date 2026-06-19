@@ -23,7 +23,7 @@
       "task_key": "Publish_CSV_Snapshot_Export",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/publish/publish_csv_snapshot_export",
+        "notebook_path": "${workspace_root}/notebooks/publish/publish_csv_snapshot_export",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
@@ -42,7 +42,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/publish/publish_manifest_write",
+        "notebook_path": "${workspace_root}/notebooks/publish/publish_manifest_write",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 600,
@@ -59,7 +59,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/publish/publish_load_order_check",
+        "notebook_path": "${workspace_root}/notebooks/publish/publish_load_order_check",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 600,
@@ -76,7 +76,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/publish/publish_supabase_upsert",
+        "notebook_path": "${workspace_root}/notebooks/publish/publish_supabase_upsert",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
@@ -99,7 +99,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "pipeline_name": "LMIP_Publishing",
@@ -126,7 +126,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

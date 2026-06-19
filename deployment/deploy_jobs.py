@@ -49,13 +49,53 @@ class JobDeployer:
                 return json.load(f)
     
     def normalize_notebook_path(self, path: str) -> str:
-        """Ensure notebook path is in correct format"""
-        # Remove /Workspace prefix if present
-        if path.startswith("/Workspace"):
-            path = path.replace("/Workspace", "")
-        # Ensure it starts with /
-        if not path.startswith("/"):
-            path = "/" + path
+        """
+        Normalize notebook paths to be portable across users and repositories.
+        
+        Transformations:
+        1. Remove /Workspace prefix if present
+        2. Replace /Users/<email>/LMIP with workspace_root from config
+        3. Ensure path starts with /
+        
+        Args:
+            path: Original notebook path from workflow JSON
+            
+        Returns:
+            Normalized path using workspace_root from configuration
+        """
+        import re
+        
+        original_path = path
+        
+        # Remove /Workspace prefix if present (existing logic)
+        if path.startswith('/Workspace'):
+            path = path[len('/Workspace'):]
+        
+        # Replace /Users/<email>/LMIP with workspace_root
+        # Pattern: /Users/ followed by any non-slash characters (email) followed by /LMIP
+        user_lmip_pattern = r'^/Users/[^/]+/LMIP'
+        
+        match = re.match(user_lmip_pattern, path)
+        if match:
+            # Extract the portion after /Users/<email>/LMIP
+            matched_root = match.group(0)  # e.g., "/Users/aaryan.shrivastav1403@gmail.com/LMIP"
+            remainder = path[len(matched_root):]  # e.g., "/notebooks/etl_job.py"
+            
+            # Build new path with configured workspace_root
+            workspace_root = self.config.workspace_root.rstrip('/')
+            normalized_path = workspace_root + remainder
+            
+            # Log the transformation
+            self.logger.info(f"  🔄 Rewritten notebook path:")
+            self.logger.info(f"     Original: {original_path}")
+            self.logger.info(f"     Updated:  {normalized_path}")
+            
+            path = normalized_path
+        
+        # Ensure path starts with / (existing logic)
+        if not path.startswith('/'):
+            path = '/' + path
+        
         return path
     
     def substitute_parameters(self, workflow: Dict) -> Dict:
