@@ -7,13 +7,6 @@
     "no_alert_for_skipped_runs": false
   },
   "timeout_seconds": 10800,
-  "trigger": {
-    "pause_status": "UNPAUSED",
-    "file_arrival": {
-      "url": "dbfs:/databricks/workflows/triggers/bronze_batch_complete",
-      "min_time_between_triggers_seconds": 7200
-    }
-  },
   "max_concurrent_runs": 1,
   "tasks": [
     {

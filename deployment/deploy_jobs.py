@@ -161,16 +161,29 @@ class JobDeployer:
             # Create or update job
             if existing_job_id and self.config.update_existing:
                 self.logger.warning(f"  🔄 Updating existing job (ID: {existing_job_id})...")
-                self.w.jobs.reset(job_id=existing_job_id, new_settings=workflow)
+                self.w.api_client.do(
+                        "POST",
+                        "/api/2.1/jobs/reset",
+                        body={
+                            "job_id": existing_job_id,
+                            "new_settings": workflow
+                        }
+                    )
                 result["status"] = "updated"
                 result["job_id"] = existing_job_id
                 self.logger.item_success("Updated successfully")
             else:
                 self.logger.info(f"  🚀 Creating new job...")
-                created_job = self.w.jobs.create(**workflow)
+                response = self.w.api_client.do(
+                    "POST",
+                    "/api/2.1/jobs/create",
+                    body=workflow
+                )
+
                 result["status"] = "created"
-                result["job_id"] = created_job.job_id
-                self.logger.item_success(f"Created successfully (ID: {created_job.job_id})")
+                result["job_id"] = response["job_id"]
+                job_id = response.get("job_id")
+                self.logger.item_success(f"Created successfully (ID: {job_id})")
             
         except FileNotFoundError:
             result["status"] = "error"
@@ -181,10 +194,18 @@ class JobDeployer:
             result["error"] = f"Invalid format: {e}"
             self.logger.item_error(result['error'])
         except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+
             result["status"] = "error"
             result["error"] = str(e)
-            self.logger.item_error(result['error'])
-        
+
+            self.logger.item_error(
+                workflow_file.name,
+                str(e)
+            )
+                
         return result
     
     def deploy_all(self, workflow_dir: Path, specific_workflow: Optional[str] = None) -> Dict:

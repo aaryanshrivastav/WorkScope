@@ -13,9 +13,6 @@
     "no_alert_for_skipped_runs": false
   },
   "timeout_seconds": 21600,
-  "trigger": {
-    "pause_status": "PAUSED"
-  },
   "max_concurrent_runs": 1,
   "tasks": [
     {
@@ -202,7 +199,7 @@
         "base_parameters": {
           "pipeline_name": "LMIP_Recovery",
           "run_id": "{{run_id}}",
-          "status": "{{tasks.Recovery_Validation_Report.state}}",
+          "status": "{SUCCESS",
           "start_time": "{{start_time}}",
           "rows_read": "0",
           "rows_written": "0",

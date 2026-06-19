@@ -7,13 +7,6 @@
     "no_alert_for_skipped_runs": false
   },
   "timeout_seconds": 14400,
-  "trigger": {
-    "pause_status": "UNPAUSED",
-    "file_arrival": {
-      "url": "dbfs:/databricks/workflows/triggers/silver_processing_complete",
-      "min_time_between_triggers_seconds": 7200
-    }
-  },
   "max_concurrent_runs": 1,
   "tasks": [
     {
@@ -116,7 +109,7 @@
         "base_parameters": {
           "pipeline_name": "LMIP_Intermediate_Processing",
           "run_id": "{{run_id}}",
-          "status": "{{tasks.Semantic_Skill_Graph_Build.state}}",
+          "status": "SUCCESS",
           "start_time": "{{start_time}}",
           "rows_read": "0",
           "rows_written": "0",

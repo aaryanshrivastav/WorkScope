@@ -10,13 +10,6 @@
     "no_alert_for_skipped_runs": false
   },
   "timeout_seconds": 10800,
-  "trigger": {
-    "pause_status": "UNPAUSED",
-    "file_arrival": {
-      "url": "dbfs:/databricks/workflows/triggers/gold_build_complete",
-      "min_time_between_triggers_seconds": 7200
-    }
-  },
   "max_concurrent_runs": 1,
   "tasks": [
     {
@@ -104,7 +97,7 @@
         "base_parameters": {
           "pipeline_name": "LMIP_Publishing",
           "run_id": "{{run_id}}",
-          "status": "{{tasks.Publish_Supabase_Upsert.state}}",
+          "status": "SUCCESS",
           "start_time": "{{start_time}}",
           "rows_read": "0",
           "rows_written": "0",

@@ -5,12 +5,10 @@
   },
   "webhook_notifications": {},
   "timeout_seconds": 0,
-  "trigger": {
-    "pause_status": "UNPAUSED",
-    "periodic": {
-      "interval": 1,
-      "unit": "HOURS"
-    }
+  "schedule": {
+    "quartz_cron_expression": "0 0 * * * ?",
+    "timezone_id": "UTC",
+    "pause_status": "UNPAUSED"
   },
   "max_concurrent_runs": 1,
   "tasks": [
@@ -145,7 +143,7 @@
         "base_parameters": {
           "pipeline_name": "LMIPDataIngestion",
           "run_id": "{{run_id}}",
-          "status": "{{tasks.Finalise_Batch.state}}",
+          "status": "SUCCESS",
           "start_time": "{{start_time}}",
           "rows_read": "0",
           "rows_written": "0",

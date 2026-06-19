@@ -7,13 +7,6 @@
     "no_alert_for_skipped_runs": false
   },
   "timeout_seconds": 18000,
-  "trigger": {
-    "pause_status": "UNPAUSED",
-    "file_arrival": {
-      "url": "dbfs:/databricks/workflows/triggers/inter_processing_complete",
-      "min_time_between_triggers_seconds": 3600
-    }
-  },
   "max_concurrent_runs": 1,
   "tasks": [
     {
