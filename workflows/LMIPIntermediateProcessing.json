@@ -20,7 +20,7 @@
       "task_key": "Intermediate_Role_Map",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_role_map",
+        "notebook_path": "${workspace_root}/notebooks/intermediate/inter_role_map",
         "base_parameters": {
           "confidence_threshold": "0.7",
           "enable_llm_fallback": "false"
@@ -37,7 +37,7 @@
       "task_key": "Intermediate_Company_Canonicalize",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_company_canonicalize",
+        "notebook_path": "${workspace_root}/notebooks/intermediate/inter_company_canonicalize",
         "base_parameters": {
           "fuzzy_threshold": "0.85"
         },
@@ -61,7 +61,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_sector_normalize",
+        "notebook_path": "${workspace_root}/notebooks/intermediate/inter_sector_normalize",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -78,7 +78,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_skill_catalog_sync",
+        "notebook_path": "${workspace_root}/notebooks/intermediate/inter_skill_catalog_sync",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 2400,
@@ -95,7 +95,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_skill_graph_build",
+        "notebook_path": "${workspace_root}/notebooks/intermediate/inter_skill_graph_build",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 3600,
@@ -112,7 +112,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "base_parameters": {
           "pipeline_name": "LMIP_Intermediate_Processing",
           "run_id": "{{run_id}}",
@@ -139,7 +139,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

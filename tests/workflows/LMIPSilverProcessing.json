@@ -10,7 +10,7 @@
       "task_key": "Standardize_Jobs",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_standardize_jobs",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_standardize_jobs",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -26,7 +26,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_detect_cdc",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_detect_cdc",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -42,7 +42,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_apply_soft_delete_restore",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_apply_soft_delete_restore",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -58,7 +58,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_dq_validate",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_dq_validate",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -74,7 +74,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_sector_assign",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_sector_assign",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -90,7 +90,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_skill_extract",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_skill_extract",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -109,7 +109,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_job_identity_map",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_job_identity_map",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -125,7 +125,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "rows_read": "0",
@@ -145,7 +145,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

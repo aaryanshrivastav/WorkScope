@@ -22,7 +22,7 @@
       "task_key": "Recovery_Rollback_Batch_Optional",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/bronze/bronze_rollback_batch",
+        "notebook_path": "${workspace_root}/notebooks/bronze/bronze_rollback_batch",
         "base_parameters": {
           "batch_id": "{{job.parameters.rollback_batch_id}}",
           "catalog": "workspace",
@@ -45,7 +45,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/bronze/bronze_replay_backfill",
+        "notebook_path": "${workspace_root}/notebooks/bronze/bronze_replay_backfill",
         "base_parameters": {
           "start_date": "{{job.parameters.start_date}}",
           "end_date": "{{job.parameters.end_date}}",
@@ -67,7 +67,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_standardize_jobs",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_standardize_jobs",
         "base_parameters": {
           "mode": "full",
           "batch_id": "{{job.parameters.batch_id}}"
@@ -88,7 +88,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/silver/silver_detect_cdc",
+        "notebook_path": "${workspace_root}/notebooks/silver/silver_detect_cdc",
         "base_parameters": {
           "enable_deletes": "true",
           "batch_id": "{{job.parameters.batch_id}}"
@@ -109,7 +109,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/intermediate/inter_role_map",
+        "notebook_path": "${workspace_root}/notebooks/intermediate/inter_role_map",
         "base_parameters": {
           "reprocess_mode": "true",
           "confidence_threshold": "0.6"
@@ -130,7 +130,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_job_scd2",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_job_scd2",
         "base_parameters": {
           "full_refresh": "true"
         },
@@ -150,7 +150,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/quarantine/quarantine_manage",
+        "notebook_path": "${workspace_root}/notebooks/quarantine/quarantine_manage",
         "base_parameters": {
           "action": "{{job.parameters.quarantine_action}}",
           "entity_type": "{{job.parameters.entity_type}}",
@@ -172,7 +172,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_generate_report",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_generate_report",
         "base_parameters": {
           "report_type": "recovery",
           "include_metrics": "true"
@@ -197,7 +197,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "pipeline_name": "LMIP_Recovery",
@@ -224,7 +224,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

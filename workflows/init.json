@@ -22,7 +22,7 @@
       "task_key": "Init_Create_Schemas",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/init/init_create_schemas",
+        "notebook_path": "${workspace_root}/notebooks/init/init_create_schemas",
         "base_parameters": {
           "catalog": "workspace"
         },
@@ -42,7 +42,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/init/init_seed_metadata",
+        "notebook_path": "${workspace_root}/notebooks/init/init_seed_metadata",
         "base_parameters": {
           "catalog": "workspace",
           "schema": "metadata"
@@ -63,7 +63,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/init/init_validate_env",
+        "notebook_path": "${workspace_root}/notebooks/init/init_validate_env",
         "base_parameters": {
           "catalog": "workspace",
           "strict_mode": "false"
@@ -84,7 +84,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/init/init_register_secrets",
+        "notebook_path": "${workspace_root}/notebooks/init/init_register_secrets",
         "base_parameters": {
           "validate_only": "true"
         },
@@ -104,7 +104,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/init/init_superset_bootstrap",
+        "notebook_path": "${workspace_root}/notebooks/init/init_superset_bootstrap",
         "base_parameters": {
           "catalog": "workspace",
           "export_config": "true"
@@ -129,7 +129,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/log_pipeline_run",
+        "notebook_path": "${workspace_root}/notebooks/audit/log_pipeline_run",
         "source": "WORKSPACE",
         "base_parameters": {
           "pipeline_name": "LMIP_Initialization",
@@ -156,7 +156,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",

@@ -10,7 +10,7 @@
       "task_key": "Dim_Date",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_date",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_date",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -21,7 +21,7 @@
       "task_key": "Dim_Location",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_location",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_location",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -32,7 +32,7 @@
       "task_key": "Dim_Role",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_role",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_role",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -43,7 +43,7 @@
       "task_key": "Dim_Sector",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_sector",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_sector",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -59,7 +59,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_company",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_company",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -75,7 +75,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_company_alias",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_company_alias",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -100,7 +100,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_job_scd2",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_job_scd2",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -111,7 +111,7 @@
       "task_key": "Dim_Skill",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_skill",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_skill",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -130,7 +130,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_bridge_job_skill",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_bridge_job_skill",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -141,7 +141,7 @@
       "task_key": "Dim_Source",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_dim_source",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_dim_source",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -157,7 +157,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_fact_job_postings",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_fact_job_postings",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -168,7 +168,7 @@
       "task_key": "Fact_Pipeline_Runs",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_fact_pipeline_runs",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_fact_pipeline_runs",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -184,7 +184,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_agg_monthly_postings",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_agg_monthly_postings",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -203,7 +203,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/gold/gold_agg_skill_demand",
+        "notebook_path": "${workspace_root}/notebooks/gold/gold_agg_skill_demand",
         "source": "WORKSPACE"
       },
       "timeout_seconds": 0,
@@ -225,7 +225,7 @@
       ],
       "run_if": "ALL_DONE",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notebook",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notebook",
         "source": "WORKSPACE",
         "base_parameters": {
           "pipeline_name": "LMIP_Warehouse_Build",
@@ -250,7 +250,7 @@
       ],
       "run_if": "AT_LEAST_ONE_FAILED",
       "notebook_task": {
-        "notebook_path": "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/notebooks/audit/audit_notification_dispatch",
+        "notebook_path": "${workspace_root}/notebooks/audit/audit_notification_dispatch",
         "source": "WORKSPACE",
         "base_parameters": {
           "notification_type": "critical_alert",
