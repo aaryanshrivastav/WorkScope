@@ -3,9 +3,11 @@
 -- Layer: REPORTING
 -- Description: Company hiring activity metrics by sector
 -- ============================================================================
--- Purpose: Physical table definition for gold_company_activity
--- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_company, workspace.gold.dim_sector
--- Expected Output: Table created with 6 columns
+-- Purpose: Physical table definition for reporting_company_activity
+-- Dependencies:
+--   workspace.gold.fact_job_postings
+--   workspace.gold.dim_company
+--   workspace.gold.dim_sector
 -- ============================================================================
 
 CREATE OR REPLACE TABLE workspace.reporting.reporting_company_activity (
@@ -14,16 +16,16 @@ CREATE OR REPLACE TABLE workspace.reporting.reporting_company_activity (
   active_jobs BIGINT COMMENT 'Current active jobs',
   total_jobs_30d BIGINT COMMENT 'Jobs last 30 days',
   top_role STRING COMMENT 'Most hired role',
-  updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh',
-  PRIMARY KEY (sector_sk, company_sk)
+  updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (sector_sk, company_sk)
+  -- must be enforced through reporting build validation
 )
-COMMENT 'Company hiring activity metrics by sector'
-PARTITIONED BY (sector_sk)
 USING DELTA
+COMMENT 'Company hiring activity metrics by sector'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

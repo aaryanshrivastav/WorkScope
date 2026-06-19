@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for inter_company_canonical
 -- Dependencies: workspace.silver.silver_jobs_current
 -- Consumers: workspace.gold.dim_company
--- Expected Output: Table created with 6 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_company_canonical (
@@ -16,15 +15,15 @@ CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_company_canonical (
   company_match_confidence DECIMAL(5,4) NOT NULL COMMENT 'Match confidence score',
   active_flag BOOLEAN NOT NULL COMMENT 'Active company flag',
   assigned_at TIMESTAMP NOT NULL COMMENT 'When mapping was created'
-,
-  PRIMARY KEY (company_name_norm)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of company_name_norm must be enforced through
+  -- matching pipeline validation and MERGE logic
 )
-COMMENT 'Canonical company name mapping. Links company name variations to canonical names.'
 USING DELTA
+COMMENT 'Canonical company name mapping. Links company name variations to canonical names.'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

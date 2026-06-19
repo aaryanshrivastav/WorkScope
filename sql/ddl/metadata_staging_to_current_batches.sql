@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for staging_to_current_batches
 -- Dependencies: workspace.silver.silver_jobs_staging
 -- Consumers: workspace.silver.silver_jobs_current (CDC idempotency control)
--- Expected Output: Table created with 8 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.metadata.staging_to_current_batches (
@@ -18,16 +17,18 @@ CREATE TABLE IF NOT EXISTS workspace.metadata.staging_to_current_batches (
   processed_at TIMESTAMP COMMENT 'Timestamp when the batch was processed through CDC',
   run_id STRING COMMENT 'Workflow run identifier (format: YYYYMMDD_HHMMSS)',
   status STRING COMMENT 'Processing status: success or failed'
-,
-  PRIMARY KEY (batch_id, source_name),
-  CONSTRAINT chk_staging_status CHECK (status IN ('success', 'failed'))
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (batch_id, source_name)
+  -- must be enforced by CDC orchestration logic
+
+  -- CHECK constraint removed for Databricks Delta compatibility
+  -- Status validation must be enforced by pipeline DQ controls
 )
-COMMENT 'Tracks which staging batches have been processed through CDC to current. Used by silver_detect_cdc to ensure idempotent batch processing.'
 USING DELTA
+COMMENT 'Tracks which staging batches have been processed through CDC to current. Used by silver_detect_cdc to ensure idempotent batch processing.'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for dim_role
 -- Dependencies: workspace.intermediate.inter_job_role_map
 -- Consumers: workspace.gold.dim_job, workspace.gold.fact_job_postings
--- Expected Output: Table created with 8 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.dim_role (
@@ -18,15 +17,15 @@ CREATE TABLE IF NOT EXISTS workspace.gold.dim_role (
   role_description STRING COMMENT 'Role description',
   is_active BOOLEAN NOT NULL COMMENT 'Active flag',
   created_at TIMESTAMP NOT NULL COMMENT 'Creation timestamp'
-,
-  PRIMARY KEY (role_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of role_sk must be enforced through
+  -- dimensional loading and validation processes
 )
-COMMENT 'Job role dimension with canonical role definitions'
 USING DELTA
+COMMENT 'Job role dimension with canonical role definitions'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

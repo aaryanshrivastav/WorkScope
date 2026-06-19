@@ -1,12 +1,12 @@
 -- ============================================================================
 -- Table: workspace.silver.silver_semantic_review_queue
 -- Layer: SILVER
--- Description: Queue for semantic review of job postings with data quality or classification issues
+-- Description: Queue for semantic review of job postings with data quality
+--              or classification issues
 -- ============================================================================
 -- Purpose: Physical table definition for silver_semantic_review_queue
 -- Dependencies: workspace.silver.silver_jobs_current
 -- Consumers: workspace.audit.audit_dq_results
--- Expected Output: Table created with 11 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.silver.silver_semantic_review_queue (
@@ -20,18 +20,21 @@ CREATE TABLE IF NOT EXISTS workspace.silver.silver_semantic_review_queue (
   resolved_at TIMESTAMP COMMENT 'When review was completed',
   resolution_notes STRING COMMENT 'Notes from review resolution',
   batch_id STRING NOT NULL COMMENT 'Batch that identified the issue',
-  source_name STRING NOT NULL COMMENT 'Source system identifier'
-,
-  PRIMARY KEY (review_id),
-  CONSTRAINT chk_review_status CHECK (status IN ('PENDING', 'IN_REVIEW', 'RESOLVED', 'DISMISSED'))
+  source_name STRING NOT NULL COMMENT 'Source system identifier',
+
+  queued_date DATE NOT NULL COMMENT 'Derived partition date from queued_at'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of review_id must be enforced through review workflow validation
+
+  -- CHECK constraint removed for Databricks compatibility
+  -- status domain must be enforced through DQ validation
 )
-COMMENT 'Queue for semantic review of job postings with data quality or classification issues'
-PARTITIONED BY (DATE(queued_at))
 USING DELTA
+PARTITIONED BY (queued_date)
+COMMENT 'Queue for semantic review of job postings with data quality or classification issues'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

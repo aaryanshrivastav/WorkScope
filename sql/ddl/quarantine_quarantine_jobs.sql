@@ -5,8 +5,8 @@
 -- ============================================================================
 -- Purpose: Physical table definition for quarantine_jobs
 -- Dependencies: workspace.silver.silver_jobs_current
--- Consumers: workspace.gold.gold_pipeline_health, workspace.audit.audit_dq_results
--- Expected Output: Table created with 22 columns
+-- Consumers: workspace.gold.gold_pipeline_health,
+--            workspace.audit.audit_dq_results
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.quarantine.quarantine_jobs (
@@ -31,19 +31,23 @@ CREATE TABLE IF NOT EXISTS workspace.quarantine.quarantine_jobs (
   reviewed_at TIMESTAMP COMMENT 'Timestamp when human review decision was made',
   quarantined_at TIMESTAMP NOT NULL COMMENT 'Timestamp when record was first routed to quarantine',
   reprocessed_at TIMESTAMP COMMENT 'Timestamp when record was reprocessed',
-  resolved_at TIMESTAMP COMMENT 'Timestamp when record lifecycle completed'
-,
-  PRIMARY KEY (quarantine_id),
-  CONSTRAINT chk_quar_severity CHECK (severity IN ('ERROR', 'WARN')),
-  CONSTRAINT chk_quar_reprocess_status CHECK (reprocess_status IN ('PENDING', 'REPROCESS', 'REPROCESSED', 'DISCARDED', 'REPROCESS_FAILED', 'RESOLVED'))
+  resolved_at TIMESTAMP COMMENT 'Timestamp when record lifecycle completed',
+
+  -- Partition column required because Databricks does not support
+  -- expression-based partitioning in PARTITIONED BY clauses
+  quarantined_date DATE NOT NULL COMMENT 'Derived partition date from quarantined_at'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Enforced through quarantine routing and validation pipelines
+
+  -- CHECK constraints removed for Databricks Delta compatibility
+  -- Enforced through DQ and workflow validation rules
 )
-COMMENT 'Records that failed data quality validation and require human review'
-PARTITIONED BY (DATE(quarantined_at))
 USING DELTA
+PARTITIONED BY (quarantined_date)
+COMMENT 'Records that failed data quality validation and require human review'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

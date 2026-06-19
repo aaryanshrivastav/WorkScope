@@ -5,7 +5,6 @@
 -- ============================================================================
 -- Purpose: Physical table definition for role_review_queue
 -- Dependencies: workspace.intermediate.inter_job_role_map
--- Expected Output: Table created with 7 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.reporting.role_review_queue (
@@ -16,15 +15,15 @@ CREATE TABLE IF NOT EXISTS workspace.reporting.role_review_queue (
   confidence DECIMAL(5,4) COMMENT 'Suggestion confidence',
   review_status STRING NOT NULL COMMENT 'PENDING, APPROVED, REJECTED',
   created_at TIMESTAMP NOT NULL COMMENT 'Queue entry timestamp'
-,
-  PRIMARY KEY (review_id)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of review_id must be enforced through
+  -- workflow validation and review queue processing
 )
-COMMENT 'Queue of job roles requiring manual review and validation'
 USING DELTA
+COMMENT 'Queue of job roles requiring manual review and validation'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

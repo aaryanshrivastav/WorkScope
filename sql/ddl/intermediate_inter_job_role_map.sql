@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for inter_job_role_map
 -- Dependencies: workspace.silver.silver_jobs_current
 -- Consumers: workspace.gold.dim_role
--- Expected Output: Table created with 8 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_job_role_map (
@@ -18,15 +17,15 @@ CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_job_role_map (
   mapping_method STRING NOT NULL COMMENT 'How mapping was created',
   mapping_confidence DECIMAL(5,4) NOT NULL COMMENT 'Mapping confidence score',
   created_at TIMESTAMP NOT NULL COMMENT 'When mapping was created'
-,
-  PRIMARY KEY (title_normalized)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of title_normalized must be enforced through
+  -- role-mapping pipeline validation and MERGE logic
 )
-COMMENT 'Job title to canonical role mapping for role standardization'
 USING DELTA
+COMMENT 'Job title to canonical role mapping for role standardization'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

@@ -3,9 +3,10 @@
 -- Layer: REPORTING
 -- Description: Geographic hiring trends and location-based analytics
 -- ============================================================================
--- Purpose: Physical table definition for gold_location_trends
--- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_location
--- Expected Output: Table created with 8 columns
+-- Purpose: Physical table definition for reporting_location_trends
+-- Dependencies:
+--   workspace.gold.fact_job_postings
+--   workspace.gold.dim_location
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_location_trends (
@@ -17,15 +18,15 @@ CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_location_trends (
   avg_salary_usd DECIMAL(15,2) COMMENT 'Average salary',
   top_sector STRING COMMENT 'Dominant sector',
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
-,
-  PRIMARY KEY (location_sk, trend_date_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (location_sk, trend_date_sk)
+  -- must be enforced through reporting refresh validation
 )
-COMMENT 'Geographic hiring trends and location-based analytics'
 USING DELTA
+COMMENT 'Geographic hiring trends and location-based analytics'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

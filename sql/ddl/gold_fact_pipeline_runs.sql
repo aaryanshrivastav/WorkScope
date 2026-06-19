@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for fact_pipeline_runs
 -- Dependencies: workspace.audit.audit_pipeline_runs
 -- Consumers: workspace.gold.gold_pipeline_health
--- Expected Output: Table created with 11 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.fact_pipeline_runs (
@@ -20,17 +19,20 @@ CREATE TABLE IF NOT EXISTS workspace.gold.fact_pipeline_runs (
   records_inserted BIGINT COMMENT 'Records inserted',
   records_updated BIGINT COMMENT 'Records updated',
   records_failed BIGINT COMMENT 'Records failed',
-  status STRING NOT NULL COMMENT 'SUCCESS, FAILED, PARTIAL'
-,
-  PRIMARY KEY (fact_pipeline_run_sk)
+  status STRING NOT NULL COMMENT 'SUCCESS, FAILED, PARTIAL',
+
+  -- Databricks partition column
+  run_date DATE NOT NULL COMMENT 'Derived partition date from run_timestamp'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of fact_pipeline_run_sk must be enforced through
+  -- pipeline loading and validation processes
 )
-COMMENT 'Pipeline execution metrics for monitoring and data quality'
-PARTITIONED BY (run_timestamp)
 USING DELTA
+PARTITIONED BY (run_date)
+COMMENT 'Pipeline execution metrics for monitoring and data quality'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

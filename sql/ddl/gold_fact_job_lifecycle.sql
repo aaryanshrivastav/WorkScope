@@ -1,12 +1,13 @@
 -- ============================================================================
 -- Table: workspace.gold.fact_job_lifecycle
 -- Layer: GOLD
--- Description: Job lifecycle metrics tracking job duration, change frequency, and lifecycle events
+-- Description: Job lifecycle metrics tracking job duration, change frequency,
+--              and lifecycle events
 -- ============================================================================
 -- Purpose: Physical table definition for fact_job_lifecycle
--- Dependencies: workspace.silver.silver_jobs_current, workspace.silver.silver_job_changes
+-- Dependencies: workspace.silver.silver_jobs_current,
+--               workspace.silver.silver_job_changes
 -- Consumers: workspace.gold.gold_pipeline_health
--- Expected Output: Table created with 11 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.fact_job_lifecycle (
@@ -21,15 +22,18 @@ CREATE TABLE IF NOT EXISTS workspace.gold.fact_job_lifecycle (
   soft_delete_count INT COMMENT 'Number of soft deletes',
   restore_count INT COMMENT 'Number of restorations',
   is_currently_active BOOLEAN NOT NULL COMMENT 'Current active status'
-,
-  PRIMARY KEY (fact_job_lifecycle_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of fact_job_lifecycle_sk must be enforced through
+  -- fact loading and validation processes
+
+  -- Foreign key relationships are not enforced by Delta Lake
+  -- Referential integrity must be validated during ETL/ELT processing
 )
-COMMENT 'Job lifecycle metrics tracking job duration, change frequency, and lifecycle events'
 USING DELTA
+COMMENT 'Job lifecycle metrics tracking job duration, change frequency, and lifecycle events'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

@@ -3,9 +3,8 @@
 -- Layer: REPORTING
 -- Description: Salary trends and compensation analytics by role and location
 -- ============================================================================
--- Purpose: Physical table definition for gold_salary_trends
+-- Purpose: Physical table definition for reporting_salary_trends
 -- Dependencies: workspace.gold.fact_salary
--- Expected Output: Table created with 10 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_salary_trends (
@@ -19,15 +18,15 @@ CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_salary_trends (
   p75_salary DECIMAL(15,2) COMMENT '75th percentile',
   sample_size BIGINT COMMENT 'Number of job postings',
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
-,
-  PRIMARY KEY (role_sk, location_sk, trend_date_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (role_sk, location_sk, trend_date_sk)
+  -- must be enforced through reporting refresh validation
 )
-COMMENT 'Salary trends and compensation analytics by role and location'
 USING DELTA
+COMMENT 'Salary trends and compensation analytics by role and location'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

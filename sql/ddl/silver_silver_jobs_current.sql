@@ -1,12 +1,14 @@
 -- ============================================================================
 -- Table: workspace.silver.silver_jobs_current
 -- Layer: SILVER
--- Description: Current state of all job postings after CDC and deduplication. Single source of truth for job data.
+-- Description: Current state of all job postings after CDC and deduplication.
+--              Single source of truth for job data.
 -- ============================================================================
 -- Purpose: Physical table definition for silver_jobs_current
 -- Dependencies: workspace.silver.silver_jobs_staging
--- Consumers: workspace.warehouse.dim_job, workspace.warehouse.fact_job_postings
--- Expected Output: Table created with 31 columns
+-- Consumers:
+--   workspace.warehouse.dim_job
+--   workspace.warehouse.fact_job_postings
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.silver.silver_jobs_current (
@@ -39,17 +41,19 @@ CREATE TABLE IF NOT EXISTS workspace.silver.silver_jobs_current (
   sector_assigned STRING COMMENT 'Assigned industry sector',
   sector_confidence DOUBLE COMMENT 'Confidence score for sector assignment',
   sector_assignment_method STRING COMMENT 'Method used for sector assignment',
-  source_url STRING COMMENT 'Source job posting URL'
-,
-  PRIMARY KEY (enterprise_job_id)
+  source_url STRING COMMENT 'Source job posting URL',
+
+  updated_date DATE NOT NULL COMMENT 'Derived partition date from updated_at'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of enterprise_job_id must be enforced
+  -- through MERGE logic and Silver DQ validation
 )
-COMMENT 'Current state of all job postings after CDC and deduplication. Single source of truth for job data.'
-PARTITIONED BY (DATE(updated_at))
 USING DELTA
+PARTITIONED BY (updated_date)
+COMMENT 'Current state of all job postings after CDC and deduplication. Single source of truth for job data.'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

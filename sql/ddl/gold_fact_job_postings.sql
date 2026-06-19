@@ -4,9 +4,10 @@
 -- Description: Core fact table for job posting events with foreign keys to all dimensions
 -- ============================================================================
 -- Purpose: Physical table definition for fact_job_postings
--- Dependencies: workspace.silver.silver_jobs_current, workspace.silver.silver_job_changes
--- Consumers: workspace.gold.gold_hiring_trends, workspace.gold.gold_location_trends
--- Expected Output: Table created with 14 columns
+-- Dependencies: workspace.silver.silver_jobs_current,
+--               workspace.silver.silver_job_changes
+-- Consumers: workspace.gold.gold_hiring_trends,
+--            workspace.gold.gold_location_trends
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.fact_job_postings (
@@ -23,17 +24,23 @@ CREATE TABLE IF NOT EXISTS workspace.gold.fact_job_postings (
   is_new_job BOOLEAN NOT NULL COMMENT 'First occurrence flag',
   is_update BOOLEAN NOT NULL COMMENT 'Update event flag',
   is_soft_delete BOOLEAN NOT NULL COMMENT 'Deletion event flag',
-  is_restore BOOLEAN NOT NULL COMMENT 'Restoration event flag'
-,
-  PRIMARY KEY (fact_job_posting_sk)
+  is_restore BOOLEAN NOT NULL COMMENT 'Restoration event flag',
+
+  -- Databricks partition column
+  posting_date DATE NOT NULL COMMENT 'Derived partition date from posting_timestamp'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of fact_job_posting_sk must be enforced through
+  -- fact loading and validation processes
+
+  -- Foreign key relationships are not enforced by Delta Lake
+  -- Referential integrity must be validated during ETL/ELT processing
 )
-COMMENT 'Core fact table for job posting events with foreign keys to all dimensions'
-PARTITIONED BY (posting_timestamp)
 USING DELTA
+PARTITIONED BY (posting_date)
+COMMENT 'Core fact table for job posting events with foreign keys to all dimensions'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

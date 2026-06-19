@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for publish_manifest_log
 -- Dependencies: None
 -- Consumers: None (audit/monitoring use)
--- Expected Output: Table created with 6 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.audit.publish_manifest_log (
@@ -17,12 +16,10 @@ CREATE TABLE IF NOT EXISTS workspace.audit.publish_manifest_log (
   manifest_version STRING COMMENT 'Version of the manifest format (e.g., 1.0)',
   generated_at TIMESTAMP COMMENT 'Timestamp when the manifest was generated (ISO 8601 format)'
 )
-COMMENT 'Audit log for manifest generation. Records manifest creation events with snapshot and table counts.'
 USING DELTA
+COMMENT 'Audit log for manifest generation. Records manifest creation events with snapshot and table counts.'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

@@ -3,9 +3,10 @@
 -- Layer: REPORTING
 -- Description: Data pipeline health metrics and monitoring dashboard data
 -- ============================================================================
--- Purpose: Physical table definition for gold_pipeline_health
--- Dependencies: workspace.gold.fact_pipeline_runs, workspace.gold.fact_job_lifecycle
--- Expected Output: Table created with 9 columns
+-- Purpose: Physical table definition for reporting_pipeline_health
+-- Dependencies:
+--   workspace.gold.fact_pipeline_runs
+--   workspace.gold.fact_job_lifecycle
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_pipeline_health (
@@ -18,15 +19,15 @@ CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_pipeline_health (
   total_records_processed BIGINT COMMENT 'Total records processed',
   success_rate DECIMAL(5,4) COMMENT 'Success rate %',
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
-,
-  PRIMARY KEY (health_date_sk, pipeline_name)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (health_date_sk, pipeline_name)
+  -- must be enforced through reporting refresh validation
 )
-COMMENT 'Data pipeline health metrics and monitoring dashboard data'
 USING DELTA
+COMMENT 'Data pipeline health metrics and monitoring dashboard data'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

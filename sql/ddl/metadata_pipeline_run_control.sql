@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for pipeline_run_control
 -- Dependencies: None
 -- Consumers: workspace.audit.audit_pipeline_runs
--- Expected Output: Table created with 10 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.metadata.pipeline_run_control (
@@ -20,18 +19,20 @@ CREATE TABLE IF NOT EXISTS workspace.metadata.pipeline_run_control (
   ended_at TIMESTAMP COMMENT 'Completion time',
   status STRING NOT NULL COMMENT 'Execution status: PENDING, RUNNING, SUCCESS, FAILED',
   operator_user STRING COMMENT 'User who triggered manual runs'
-,
-  PRIMARY KEY (run_control_sk),
-  CONSTRAINT uq_batch_id UNIQUE (batch_id),
-  CONSTRAINT chk_trigger_type CHECK (trigger_type IN ('SCHEDULED', 'MANUAL', 'EVENT')),
-  CONSTRAINT chk_run_status CHECK (status IN ('PENDING', 'RUNNING', 'SUCCESS', 'FAILED'))
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Enforced through orchestration and metadata validation pipelines
+
+  -- UNIQUE constraint removed for Databricks Delta compatibility
+  -- batch_id uniqueness must be enforced before MERGE/INSERT operations
+
+  -- CHECK constraints removed for Databricks Delta compatibility
+  -- Enforced through orchestration and data quality validation rules
 )
-COMMENT 'Pipeline execution control and orchestration metadata'
 USING DELTA
+COMMENT 'Pipeline execution control and orchestration metadata'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

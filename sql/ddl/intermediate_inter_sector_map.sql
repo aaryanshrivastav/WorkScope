@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for inter_sector_map
 -- Dependencies: None (source table)
 -- Consumers: workspace.gold.dim_sector
--- Expected Output: Table created with 5 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_sector_map (
@@ -15,15 +14,15 @@ CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_sector_map (
   sector_description STRING COMMENT 'Sector description',
   is_active BOOLEAN NOT NULL COMMENT 'Active sector flag',
   created_at TIMESTAMP NOT NULL COMMENT 'Creation timestamp'
-,
-  PRIMARY KEY (sector_name)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of sector_name must be enforced through
+  -- taxonomy governance and pipeline validation
 )
-COMMENT 'Sector taxonomy and hierarchical sector mapping'
 USING DELTA
+COMMENT 'Sector taxonomy and hierarchical sector mapping'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

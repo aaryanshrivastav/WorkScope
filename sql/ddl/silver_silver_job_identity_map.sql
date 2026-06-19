@@ -1,12 +1,12 @@
 -- ============================================================================
 -- Table: workspace.silver.silver_job_identity_map
 -- Layer: SILVER
--- Description: Cross-source job identity linking. Maps duplicate jobs across different data sources.
+-- Description: Cross-source job identity linking. Maps duplicate jobs across
+--              different data sources.
 -- ============================================================================
 -- Purpose: Physical table definition for silver_job_identity_map
 -- Dependencies: workspace.silver.silver_jobs_current
 -- Consumers: workspace.warehouse.dim_job
--- Expected Output: Table created with 9 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.silver.silver_job_identity_map (
@@ -19,15 +19,15 @@ CREATE TABLE IF NOT EXISTS workspace.silver.silver_job_identity_map (
   match_score DECIMAL(5,4) NOT NULL COMMENT 'Match confidence 0-1',
   assigned_at TIMESTAMP NOT NULL COMMENT 'When linkage was created',
   batch_id STRING NOT NULL COMMENT 'Processing batch ID'
-,
-  PRIMARY KEY (job_identity_map_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of job_identity_map_sk must be enforced
+  -- through Silver-layer validation and merge logic
 )
-COMMENT 'Cross-source job identity linking. Maps duplicate jobs across different data sources.'
 USING DELTA
+COMMENT 'Cross-source job identity linking. Maps duplicate jobs across different data sources.'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

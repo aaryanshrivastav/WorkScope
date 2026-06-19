@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for inter_job_skill_evidence
 -- Dependencies: workspace.silver.silver_skill_mapping
 -- Consumers: workspace.gold.bridge_job_skill
--- Expected Output: Table created with 9 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_job_skill_evidence (
@@ -19,15 +18,15 @@ CREATE TABLE IF NOT EXISTS workspace.intermediate.inter_job_skill_evidence (
   confidence DECIMAL(5,4) NOT NULL COMMENT 'Extraction confidence',
   review_status STRING COMMENT 'PENDING, APPROVED, REJECTED',
   extracted_at TIMESTAMP NOT NULL COMMENT 'Extraction timestamp'
-,
-  PRIMARY KEY (evidence_id)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of evidence_id must be enforced through
+  -- skill extraction and validation pipelines
 )
-COMMENT 'Evidence snippets for job-skill mappings for review and validation'
 USING DELTA
+COMMENT 'Evidence snippets for job-skill mappings for review and validation'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

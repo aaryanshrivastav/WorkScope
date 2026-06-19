@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for dedupe_tracking
 -- Dependencies: workspace.bronze.bronze_job_snapshot
 -- Consumers: workspace.audit.audit_dq_results
--- Expected Output: Table created with 11 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.bronze.dedupe_tracking (
@@ -19,18 +18,25 @@ CREATE TABLE IF NOT EXISTS workspace.bronze.dedupe_tracking (
   duplicate_count INT NOT NULL COMMENT 'Number of duplicate occurrences',
   first_seen_timestamp TIMESTAMP COMMENT 'First occurrence timestamp',
   last_seen_timestamp TIMESTAMP COMMENT 'Last occurrence timestamp',
-  batch_status STRING NOT NULL DEFAULT 'PROCESSED' COMMENT 'Batch processing status: PROCESSED, ROLLED_BACK',
-  tracking_timestamp TIMESTAMP NOT NULL COMMENT 'When dedupe was tracked'
-,
-  PRIMARY KEY (dedupe_id)
+
+  batch_status STRING NOT NULL COMMENT 'Batch processing status: PROCESSED, ROLLED_BACK',
+
+  tracking_timestamp TIMESTAMP NOT NULL COMMENT 'When dedupe was tracked',
+
+  -- Partition column required to avoid high-cardinality TIMESTAMP partitioning
+  tracking_date DATE NOT NULL COMMENT 'Derived partition date from tracking_timestamp'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Enforced through ingestion and reconciliation pipelines
+
+  -- DEFAULT value removed for Databricks portability
+  -- Ingestion pipelines should populate PROCESSED when no explicit status is supplied
 )
-COMMENT 'Tracks duplicate payload occurrences in Bronze tables without deleting data'
-PARTITIONED BY (tracking_timestamp)
 USING DELTA
+PARTITIONED BY (tracking_date)
+COMMENT 'Tracks duplicate payload occurrences in Bronze tables without deleting data'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

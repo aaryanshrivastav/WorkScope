@@ -3,9 +3,10 @@
 -- Layer: REPORTING
 -- Description: Aggregated hiring trends by date and sector for time-series analysis
 -- ============================================================================
--- Purpose: Physical table definition for gold_hiring_trends
--- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_sector
--- Expected Output: Table created with 8 columns
+-- Purpose: Physical table definition for reporting_hiring_trends
+-- Dependencies:
+--   workspace.gold.fact_job_postings
+--   workspace.gold.dim_sector
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_hiring_trends (
@@ -17,15 +18,15 @@ CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_hiring_trends (
   unique_companies BIGINT COMMENT 'Companies hiring',
   avg_days_to_fill DECIMAL(10,2) COMMENT 'Average time to fill',
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
-,
-  PRIMARY KEY (hiring_date_sk, sector_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (hiring_date_sk, sector_sk)
+  -- must be enforced through reporting refresh validation
 )
-COMMENT 'Aggregated hiring trends by date and sector for time-series analysis'
 USING DELTA
+COMMENT 'Aggregated hiring trends by date and sector for time-series analysis'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

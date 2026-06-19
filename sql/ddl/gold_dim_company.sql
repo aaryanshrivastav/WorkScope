@@ -4,9 +4,10 @@
 -- Description: Company dimension with canonical company names and attributes (SCD Type 1)
 -- ============================================================================
 -- Purpose: Physical table definition for dim_company
--- Dependencies: workspace.intermediate.inter_company_canonical, workspace.intermediate.inter_company_map
--- Consumers: workspace.gold.dim_job, workspace.gold.fact_job_postings
--- Expected Output: Table created with 10 columns
+-- Dependencies: workspace.intermediate.inter_company_canonical,
+--               workspace.intermediate.inter_company_map
+-- Consumers: workspace.gold.dim_job,
+--            workspace.gold.fact_job_postings
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.dim_company (
@@ -20,15 +21,18 @@ CREATE TABLE IF NOT EXISTS workspace.gold.dim_company (
   sector_name STRING COMMENT 'Sector name (denormalized)',
   is_active BOOLEAN NOT NULL COMMENT 'Active flag',
   updated_at TIMESTAMP NOT NULL COMMENT 'Last update timestamp'
-,
-  PRIMARY KEY (company_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of company_sk must be enforced through
+  -- dimensional loading and validation processes
+
+  -- Foreign key relationships are not enforced by Delta Lake
+  -- Referential integrity must be validated during ETL/ELT processing
 )
-COMMENT 'Company dimension with canonical company names and attributes (SCD Type 1)'
 USING DELTA
+COMMENT 'Company dimension with canonical company names and attributes (SCD Type 1)'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

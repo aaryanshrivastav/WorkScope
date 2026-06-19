@@ -4,8 +4,9 @@
 -- Description: Skill demand analytics showing most requested skills and trends
 -- ============================================================================
 -- Purpose: Physical table definition for reporting_skill_demand
--- Dependencies: workspace.gold.bridge_job_skill, workspace.gold.fact_job_postings
--- Expected Output: Table created with 8 columns
+-- Dependencies:
+--   workspace.gold.bridge_job_skill
+--   workspace.gold.fact_job_postings
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_skill_demand (
@@ -17,15 +18,15 @@ CREATE TABLE IF NOT EXISTS workspace.reporting.reporting_skill_demand (
   growth_rate_30d DECIMAL(10,2) COMMENT '30-day growth rate',
   top_sector STRING COMMENT 'Primary sector demanding skill',
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
-,
-  PRIMARY KEY (skill_sk, demand_date_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Composite uniqueness of (skill_sk, demand_date_sk)
+  -- must be enforced through reporting refresh validation
 )
-COMMENT 'Skill demand analytics showing most requested skills and trends'
 USING DELTA
+COMMENT 'Skill demand analytics showing most requested skills and trends'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

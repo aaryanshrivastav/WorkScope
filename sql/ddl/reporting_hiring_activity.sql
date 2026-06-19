@@ -3,9 +3,10 @@
 -- Layer: REPORTING
 -- Description: Hiring trends and analysis across sectors
 -- ============================================================================
--- Purpose: Physical table definition for gold_hiring_activity
--- Dependencies: workspace.gold.fact_job_postings, workspace.gold.dim_sector
--- Expected Output: Table created with 7 columns
+-- Purpose: Physical table definition for reporting_hiring_activity
+-- Dependencies:
+--   workspace.gold.fact_job_postings
+--   workspace.gold.dim_sector
 -- ============================================================================
 
 CREATE OR REPLACE TABLE workspace.reporting.reporting_hiring_activity (
@@ -18,12 +19,9 @@ CREATE OR REPLACE TABLE workspace.reporting.reporting_hiring_activity (
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
 )
 USING DELTA
-PARTITIONED BY (sector_sk)
 COMMENT 'Hiring trends and analysis across sectors'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

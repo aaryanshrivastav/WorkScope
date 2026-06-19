@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for dim_location
 -- Dependencies: workspace.silver.silver_jobs_current
 -- Consumers: workspace.gold.dim_job, workspace.gold.fact_job_postings
--- Expected Output: Table created with 11 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.dim_location (
@@ -21,15 +20,15 @@ CREATE TABLE IF NOT EXISTS workspace.gold.dim_location (
   longitude DECIMAL(10,7) COMMENT 'Longitude coordinate',
   is_remote BOOLEAN NOT NULL COMMENT 'Remote location flag',
   created_at TIMESTAMP NOT NULL COMMENT 'Creation timestamp'
-,
-  PRIMARY KEY (location_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of location_sk must be enforced through
+  -- dimensional loading and validation processes
 )
-COMMENT 'Location dimension with geographic hierarchy'
 USING DELTA
+COMMENT 'Location dimension with geographic hierarchy'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

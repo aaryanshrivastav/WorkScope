@@ -4,9 +4,10 @@
 -- Description: Job dimension with SCD Type 2 for tracking job posting changes over time
 -- ============================================================================
 -- Purpose: Physical table definition for dim_job
--- Dependencies: workspace.silver.silver_jobs_current, workspace.silver.silver_job_identity_map
--- Consumers: workspace.gold.fact_job_postings, workspace.gold.fact_job_lifecycle
--- Expected Output: Table created with 16 columns
+-- Dependencies: workspace.silver.silver_jobs_current,
+--               workspace.silver.silver_job_identity_map
+-- Consumers: workspace.gold.fact_job_postings,
+--            workspace.gold.fact_job_lifecycle
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.dim_job (
@@ -25,17 +26,22 @@ CREATE TABLE IF NOT EXISTS workspace.gold.dim_job (
   effective_from TIMESTAMP NOT NULL COMMENT 'Version valid from',
   effective_to TIMESTAMP COMMENT 'Version valid to',
   is_current BOOLEAN NOT NULL COMMENT 'Current version flag',
-  record_hash STRING NOT NULL COMMENT 'Content hash for change detection'
-,
-  PRIMARY KEY (job_sk)
+  record_hash STRING NOT NULL COMMENT 'Content hash for change detection',
+
+  -- Databricks partition column
+  effective_from_date DATE NOT NULL COMMENT 'Derived partition date from effective_from'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of job_sk must be enforced through SCD Type 2 loading logic
+
+  -- Foreign key relationships are not enforced by Delta Lake
+  -- Referential integrity must be validated during ETL/ELT processing
 )
-COMMENT 'Job dimension with SCD Type 2 for tracking job posting changes over time'
-PARTITIONED BY (effective_from)
 USING DELTA
+PARTITIONED BY (effective_from_date)
+COMMENT 'Job dimension with SCD Type 2 for tracking job posting changes over time'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

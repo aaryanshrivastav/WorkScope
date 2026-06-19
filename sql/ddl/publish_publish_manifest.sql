@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for publish_manifest
 -- Dependencies: workspace.gold.* tables
 -- Consumers: workspace.publish.publish_bundle_log
--- Expected Output: Table created with 8 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.publish.publish_manifest (
@@ -17,18 +16,23 @@ CREATE TABLE IF NOT EXISTS workspace.publish.publish_manifest (
   checksum_json STRING COMMENT 'Checksums for all files in bundle (JSON)',
   rowcount_json STRING COMMENT 'Row counts for all tables (JSON)',
   access_mode STRING NOT NULL COMMENT 'Access mode: PUBLIC, RESTRICTED, PRIVATE',
-  created_at TIMESTAMP NOT NULL COMMENT 'When manifest was created'
-,
-  PRIMARY KEY (manifest_id),
-  CONSTRAINT chk_manifest_access_mode CHECK (access_mode IN ('PUBLIC', 'RESTRICTED', 'PRIVATE'))
+  created_at TIMESTAMP NOT NULL COMMENT 'When manifest was created',
+
+  -- Partition column required because Databricks does not support
+  -- expression-based partitioning in PARTITIONED BY clauses
+  created_date DATE NOT NULL COMMENT 'Derived partition date from created_at'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Enforced through publish orchestration and validation pipelines
+
+  -- CHECK constraint removed for Databricks Delta compatibility
+  -- Enforced through publish governance validation rules
 )
-COMMENT 'Manifest tracking for published data bundles'
-PARTITIONED BY (DATE(created_at))
 USING DELTA
+PARTITIONED BY (created_date)
+COMMENT 'Manifest tracking for published data bundles'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

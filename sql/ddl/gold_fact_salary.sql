@@ -6,7 +6,6 @@
 -- Purpose: Physical table definition for fact_salary
 -- Dependencies: workspace.gold.dim_job
 -- Consumers: workspace.gold.gold_salary_trends
--- Expected Output: Table created with 11 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.gold.fact_salary (
@@ -21,15 +20,18 @@ CREATE TABLE IF NOT EXISTS workspace.gold.fact_salary (
   salary_midpoint DECIMAL(15,2) COMMENT 'Midpoint salary',
   salary_currency STRING NOT NULL COMMENT 'Currency code',
   salary_normalized_usd DECIMAL(15,2) COMMENT 'USD-normalized salary'
-,
-  PRIMARY KEY (fact_salary_sk)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of fact_salary_sk must be enforced through
+  -- fact loading and validation processes
+
+  -- Foreign key relationships are not enforced by Delta Lake
+  -- Referential integrity must be validated during ETL/ELT processing
 )
-COMMENT 'Salary fact table for compensation analysis'
 USING DELTA
+COMMENT 'Salary fact table for compensation analysis'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

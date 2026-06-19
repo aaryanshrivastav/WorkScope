@@ -3,9 +3,10 @@
 -- Layer: REPORTING
 -- Description: Skill demand analysis by sector
 -- ============================================================================
--- Purpose: Physical table definition for gold_skill_demand_by_sector
--- Dependencies: workspace.gold.bridge_job_skill, workspace.gold.dim_sector
--- Expected Output: Table created with 7 columns
+-- Purpose: Physical table definition for reporting_skill_demand_by_sector
+-- Dependencies:
+--   workspace.gold.bridge_job_skill
+--   workspace.gold.dim_sector
 -- ============================================================================
 
 CREATE OR REPLACE TABLE workspace.reporting.reporting_skill_demand_by_sector (
@@ -18,12 +19,9 @@ CREATE OR REPLACE TABLE workspace.reporting.reporting_skill_demand_by_sector (
   updated_at TIMESTAMP NOT NULL COMMENT 'Last refresh'
 )
 USING DELTA
-PARTITIONED BY (sector_sk)
 COMMENT 'Skill demand analysis by sector'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

@@ -5,8 +5,8 @@
 -- ============================================================================
 -- Purpose: Physical table definition for quarantine_batches
 -- Dependencies: workspace.quarantine.quarantine_jobs
--- Consumers: workspace.gold.gold_pipeline_health, workspace.audit.audit_pipeline_runs
--- Expected Output: Table created with 20 columns
+-- Consumers: workspace.gold.gold_pipeline_health,
+--            workspace.audit.audit_pipeline_runs
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.quarantine.quarantine_batches (
@@ -30,19 +30,23 @@ CREATE TABLE IF NOT EXISTS workspace.quarantine.quarantine_batches (
   execution_duration_seconds DOUBLE COMMENT 'Total execution time in seconds',
   started_at TIMESTAMP NOT NULL COMMENT 'Timestamp when batch operation started',
   completed_at TIMESTAMP COMMENT 'Timestamp when batch operation completed',
-  created_at TIMESTAMP NOT NULL COMMENT 'Timestamp when batch record was created'
-,
-  PRIMARY KEY (batch_id),
-  CONSTRAINT chk_batch_operation_type CHECK (operation_type IN ('ROUTE', 'REPROCESS', 'DISCARD', 'CLEANUP', 'REVIEW_APPLY')),
-  CONSTRAINT chk_batch_operation_status CHECK (operation_status IN ('IN_PROGRESS', 'COMPLETED', 'FAILED', 'PARTIALLY_COMPLETED'))
+  created_at TIMESTAMP NOT NULL COMMENT 'Timestamp when batch record was created',
+
+  -- Partition column required because Databricks does not support
+  -- expression-based partitioning in PARTITIONED BY clauses
+  started_date DATE NOT NULL COMMENT 'Derived partition date from started_at'
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Enforced through quarantine orchestration and validation pipelines
+
+  -- CHECK constraints removed for Databricks Delta compatibility
+  -- Enforced through quarantine workflow validation rules
 )
-COMMENT 'Batch-level tracking for bulk quarantine operations'
-PARTITIONED BY (DATE(started_at))
 USING DELTA
+PARTITIONED BY (started_date)
+COMMENT 'Batch-level tracking for bulk quarantine operations'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

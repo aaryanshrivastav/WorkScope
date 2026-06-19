@@ -1,12 +1,12 @@
 -- ============================================================================
 -- Table: workspace.silver.silver_jobs_staging
 -- Layer: SILVER
--- Description: Staging area for standardized jobs before CDC detection. Temporary holding area for batch processing.
+-- Description: Staging area for standardized jobs before CDC detection.
+--              Temporary holding area for batch processing.
 -- ============================================================================
 -- Purpose: Physical table definition for silver_jobs_staging
 -- Dependencies: workspace.bronze.bronze_job_snapshot
 -- Consumers: workspace.silver.silver_jobs_current
--- Expected Output: Table created with 20 columns
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.silver.silver_jobs_staging (
@@ -30,15 +30,15 @@ CREATE TABLE IF NOT EXISTS workspace.silver.silver_jobs_staging (
   is_active BOOLEAN NOT NULL COMMENT 'Active flag',
   soft_delete_flag BOOLEAN NOT NULL COMMENT 'Soft delete marker',
   soft_delete_reason STRING COMMENT 'Reason for soft delete'
-,
-  PRIMARY KEY (source_job_key)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of source_job_key must be enforced through
+  -- staging validation and CDC processing logic
 )
-COMMENT 'Staging area for standardized jobs before CDC detection. Temporary holding area for batch processing.'
 USING DELTA
+COMMENT 'Staging area for standardized jobs before CDC detection. Temporary holding area for batch processing.'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL

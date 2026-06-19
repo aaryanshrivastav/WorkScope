@@ -1,12 +1,14 @@
 -- ============================================================================
 -- Table: workspace.silver.silver_skill_mapping
 -- Layer: SILVER
--- Description: Extracted skills from job descriptions with evidence and confidence scores
+-- Description: Extracted skills from job descriptions with evidence and
+--              confidence scores
 -- ============================================================================
 -- Purpose: Physical table definition for silver_skill_mapping
 -- Dependencies: workspace.silver.silver_jobs_current
--- Consumers: workspace.intermediate.inter_skill_catalog, workspace.warehouse.bridge_job_skill
--- Expected Output: Table created with 9 columns
+-- Consumers:
+--   workspace.intermediate.inter_skill_catalog
+--   workspace.warehouse.bridge_job_skill
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS workspace.silver.silver_skill_mapping (
@@ -19,15 +21,15 @@ CREATE TABLE IF NOT EXISTS workspace.silver.silver_skill_mapping (
   confidence DECIMAL(5,4) NOT NULL COMMENT 'Extraction confidence 0-1',
   batch_id STRING NOT NULL COMMENT 'Processing batch ID',
   extracted_at TIMESTAMP NOT NULL COMMENT 'Extraction timestamp'
-,
-  PRIMARY KEY (skill_mapping_id)
+
+  -- PRIMARY KEY removed for Databricks Delta compatibility
+  -- Uniqueness of skill_mapping_id must be enforced through
+  -- Silver-layer validation and merge logic
 )
-COMMENT 'Extracted skills from job descriptions with evidence and confidence scores'
 USING DELTA
+COMMENT 'Extracted skills from job descriptions with evidence and confidence scores'
 TBLPROPERTIES (
   'delta.enableChangeDataFeed' = 'true',
   'delta.autoOptimize.optimizeWrite' = 'true',
   'delta.autoOptimize.autoCompact' = 'true'
 );
-
--- End of DDL
