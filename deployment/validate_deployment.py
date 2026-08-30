@@ -175,6 +175,8 @@ class DeploymentValidator:
         critical_notebooks = [
             "notebooks/ingestion/ingest_remotive",
             "notebooks/ingestion/ingest_arbeitnow",
+            "notebooks/ingestion/ingest_usajobs",
+            "notebooks/ingestion/ingest_adzuna",
             "notebooks/ingestion/ingest_common_helpers",
             "notebooks/ingestion/ingest_manifest_writer",
             "notebooks/init/init_create_schemas",

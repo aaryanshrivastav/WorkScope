@@ -1,9 +1,8 @@
-"""
-LMIP Test Configuration and Shared Fixtures
-
-Provides reusable fixtures for unit and integration tests.
-Uses pytest-spark for Spark session management.
-"""
+import os
+import sys
+# Set PySpark worker/driver python path to match driver python executable
+os.environ["PYSPARK_PYTHON"] = sys.executable
+os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
 import pytest
 from datetime import datetime, timedelta
@@ -14,16 +13,14 @@ import hashlib
 
 @pytest.fixture(scope="session")
 def spark():
-    """
-    Create a Spark session for testing.
-    Session-scoped to reuse across all tests.
-    """
     spark = (
         SparkSession.builder
         .appName("LMIP_Unit_Tests")
         .master("local[2]")
         .config("spark.sql.shuffle.partitions", "2")
         .config("spark.default.parallelism", "2")
+        .config("spark.driver.host", "127.0.0.1")
+        .config("spark.driver.bindAddress", "127.0.0.1")
         .config("spark.sql.warehouse.dir", "/tmp/spark-warehouse")
         .config("spark.driver.memory", "2g")
         .getOrCreate()

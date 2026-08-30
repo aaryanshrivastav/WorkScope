@@ -1,22 +1,51 @@
 role_key,canonical_role,family_key,sector_key,seniority,aliases
-ENG_SWE,Software Engineer,ENG,TECH,mid,"software engineer|swe|software dev|developer|programmer"
-ENG_SWE_SR,Senior Software Engineer,ENG,TECH,senior,"senior software engineer|sr swe|lead developer|senior dev"
-ENG_SWE_JR,Junior Software Engineer,ENG,TECH,junior,"junior software engineer|jr swe|associate developer"
-DATA_DS,Data Scientist,DATA,TECH,mid,"data scientist|ml engineer|machine learning engineer"
-DATA_ANALYST,Data Analyst,DATA,TECH,mid,"data analyst|business analyst|analytics specialist"
-ITOPS_DEVOPS,DevOps Engineer,ITOPS,TECH,mid,"devops engineer|site reliability engineer|sre|platform engineer"
-ITOPS_SYSADM,Systems Administrator,ITOPS,TECH,mid,"systems administrator|sysadmin|it administrator"
-HOSP_MANAGER,Hotel Manager,HOSP_OPS,HOSP,senior,"hotel manager|general manager|property manager"
-HOSP_FD_MGR,Front Desk Manager,HOSP_OPS,HOSP,mid,"front desk manager|front office manager|guest services manager"
-HOSP_FD,Front Desk Agent,HOSP_OPS,HOSP,junior,"front desk agent|receptionist|guest service agent"
-HOSP_CHEF,Executive Chef,HOSP_FB,HOSP,senior,"executive chef|head chef|chef de cuisine"
-HOSP_COOK,Line Cook,HOSP_FB,HOSP,junior,"line cook|prep cook|cook"
-HEAL_RN,Registered Nurse,CLIN_CARE,HEAL,mid,"registered nurse|rn|staff nurse"
-HEAL_NP,Nurse Practitioner,CLIN_CARE,HEAL,senior,"nurse practitioner|np|advanced practice nurse"
-HEAL_MD,Physician,CLIN_CARE,HEAL,senior,"physician|doctor|md|medical doctor"
-HEAL_MED_CODE,Medical Coder,HEAL_ADMIN,HEAL,mid,"medical coder|coding specialist|health information coder"
-FIN_ACCT,Accountant,FIN_ACCT,FIN,mid,"accountant|staff accountant|accounting specialist"
-FIN_FIN_ANALYST,Financial Analyst,FIN_CORP,FIN,mid,"financial analyst|finance analyst|corporate finance analyst"
-FIN_CFO,Chief Financial Officer,FIN_CORP,FIN,executive,"cfo|chief financial officer|vp finance"
-RETAIL_MGR,Store Manager,RETAIL_OPS,RETAIL,mid,"store manager|retail manager|shop manager"
-RETAIL_ASSOC,Retail Sales Associate,RETAIL_OPS,RETAIL,junior,"sales associate|retail associate|sales rep"
+ENG_SWE,Software Engineer,ENG,TECH,mid,software engineer|swe|software dev|developer|programmer
+ENG_SWE_SR,Senior Software Engineer,ENG,TECH,senior,senior software engineer|sr swe|lead developer|senior dev
+ENG_SWE_JR,Junior Software Engineer,ENG,TECH,junior,junior software engineer|jr swe|associate developer
+DATA_DS,Data Scientist,DATA,TECH,mid,data scientist|ml engineer|machine learning engineer
+DATA_ANALYST,Data Analyst,DATA,TECH,mid,data analyst|business analyst|analytics specialist
+DATA_ENG,Data Engineer,DATA,TECH,mid,data engineer|big data engineer|data platform engineer
+ITOPS_DEVOPS,DevOps Engineer,ITOPS,TECH,mid,devops engineer|site reliability engineer|sre|platform engineer
+ITOPS_SYSADM,Systems Administrator,ITOPS,TECH,mid,systems administrator|sysadmin|it administrator
+HOSP_MANAGER,Hotel Manager,HOSP_OPS,HOSP,senior,hotel manager|general manager|property manager
+HOSP_FD_MGR,Front Desk Manager,HOSP_OPS,HOSP,mid,front desk manager|front office manager|guest services manager
+HOSP_FD,Front Desk Agent,HOSP_OPS,HOSP,junior,front desk agent|receptionist|guest service agent
+HOSP_CHEF,Executive Chef,HOSP_FB,HOSP,senior,executive chef|head chef|chef de cuisine
+HOSP_COOK,Line Cook,HOSP_FB,HOSP,junior,line cook|prep cook|cook
+HOSP_SOUS_CHEF,Sous Chef,HOSP_FB,HOSP,mid,sous chef|assistant head chef
+HOSP_WAITER,Server,HOSP_FB,HOSP,junior,server|waiter|waitress|waitstaff
+HOSP_BARTENDER,Bartender,HOSP_FB,HOSP,junior,bartender|mixologist|bar staff
+HOSP_HOUSEKEEPER,Housekeeper,HOSP_OPS,HOSP,junior,housekeeper|maid|cleaning staff|room attendant
+HEAL_RN,Registered Nurse,CLIN_CARE,HEAL,mid,registered nurse|rn|staff nurse
+HEAL_NP,Nurse Practitioner,CLIN_CARE,HEAL,senior,nurse practitioner|np|advanced practice nurse
+HEAL_MD,Physician,CLIN_CARE,HEAL,senior,physician|doctor|md|medical doctor
+HEAL_MED_CODE,Medical Coder,HEAL_ADMIN,HEAL,mid,medical coder|coding specialist|health information coder
+HEAL_CNA,Certified Nursing Assistant,CLIN_CARE,HEAL,junior,certified nursing assistant|cna|nursing assistant
+HEAL_LPN,Licensed Practical Nurse,CLIN_CARE,HEAL,mid,licensed practical nurse|lpn|licensed vocational nurse|lvn
+HEAL_MA,Medical Assistant,CLIN_CARE,HEAL,junior,medical assistant|ma|clinical assistant
+HEAL_PHLEBOTOMIST,Phlebotomist,CLIN_CARE,HEAL,mid,phlebotomist|phlebotomy technician|blood drawer
+HEAL_HOSP_ADMIN,Healthcare Administrator,HEAL_ADMIN,HEAL,senior,healthcare administrator|clinical director|practice manager
+FIN_ACCT,Accountant,FIN_ACCT,FIN,mid,accountant|staff accountant|accounting specialist
+FIN_FIN_ANALYST,Financial Analyst,FIN_CORP,FIN,mid,financial analyst|finance analyst|corporate finance analyst
+FIN_CFO,Chief Financial Officer,FIN_CORP,FIN,executive,cfo|chief financial officer|vp finance
+FIN_AUDITOR,Internal Auditor,FIN_ACCT,FIN,mid,auditor|internal auditor|financial auditor
+FIN_TAX_SPEC,Tax Specialist,FIN_ACCT,FIN,mid,tax specialist|tax accountant|tax analyst
+FIN_RISK_MGR,Risk Manager,RISK,FIN,senior,risk manager|risk officer|compliance manager
+RETAIL_MGR,Store Manager,RETAIL_OPS,RETAIL,mid,store manager|retail manager|shop manager
+RETAIL_ASSOC,Retail Sales Associate,RETAIL_OPS,RETAIL,junior,sales associate|retail associate|sales rep
+RETAIL_MERCHANDISER,Visual Merchandiser,RETAIL_OPS,RETAIL,mid,visual merchandiser|merchandiser|display stylist
+RETAIL_CASHIER,Cashier,RETAIL_OPS,RETAIL,junior,cashier|checkout operator|clerk
+RETAIL_BUYER,Retail Buyer,RETAIL_OPS,RETAIL,mid,retail buyer|purchasing agent|merchandising buyer
+MFG_PROD_MGR,Production Manager,MFG_OPS,MFG,senior,production manager|manufacturing manager|plant manager
+MFG_QA_ENG,Quality Engineer,MFG_OPS,MFG,mid,quality engineer|qa engineer|quality assurance engineer
+MFG_OPERATOR,Machine Operator,MFG_OPS,MFG,junior,machine operator|production operator|assembly line worker
+MFG_PLC_TECH,PLC Technician,MFG_OPS,MFG,mid,plc technician|controls technician|automation specialist
+MFG_CNC_MACH,CNC Machinist,MFG_OPS,MFG,mid,cnc machinist|cnc operator|machinist
+EDU_TEACHER,School Teacher,EDU_OPS,EDU,mid,teacher|classroom teacher|school teacher|educator
+EDU_TEACHER_ASST,Teacher Assistant,EDU_OPS,EDU,junior,teacher assistant|paraeducator|classroom assistant
+EDU_PRINCIPAL,School Principal,EDU_OPS,EDU,senior,principal|headmaster|school administrator
+EDU_INSTRUCT_DESIGN,Instructional Designer,EDU_OPS,EDU,mid,instructional designer|curriculum developer
+GOV_POLICY_ANALYST,Policy Analyst,GOV_ADMIN,GOV,mid,policy analyst|public policy analyst|research analyst
+GOV_GRANT_OFFICER,Grant Officer,GOV_ADMIN,GOV,mid,grant officer|grant administrator|grant writer
+GOV_TOWN_PLANNER,Urban Planner,GOV_ADMIN,GOV,mid,urban planner|city planner|town planner
+GOV_CIVIC_ENG_SPEC,Civic Engagement Specialist,GOV_ADMIN,GOV,mid,civic engagement specialist|public relations specialist

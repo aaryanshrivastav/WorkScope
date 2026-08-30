@@ -115,6 +115,7 @@ class LMIPBootstrapper:
         "reporting_role_review_queue.sql",
         "reporting_skill_demand.sql",
         "reporting_skill_demand_by_sector.sql",
+        "reporting_role_skill_frequency.sql",
         "reporting_company_activity.sql",
         "reporting_company_hiring.sql",
         "reporting_hiring_activity.sql",

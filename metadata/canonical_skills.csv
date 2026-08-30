@@ -1,26 +1,132 @@
 skill_key,canonical_skill,skill_category,sector_key,aliases
-TECH_PYTHON,Python,Technical,TECH,"python|py"
-TECH_JAVA,Java,Technical,TECH,"java"
-TECH_JS,JavaScript,Technical,TECH,"javascript|js|node.js|nodejs"
-TECH_SQL,SQL,Technical,TECH,"sql|structured query language|tsql|plsql"
-TECH_AWS,AWS,Technical,TECH,"aws|amazon web services|amazon cloud"
-TECH_DOCKER,Docker,Technical,TECH,"docker|containerization"
-TECH_K8S,Kubernetes,Technical,TECH,"kubernetes|k8s|container orchestration"
-TECH_REACT,React,Technical,TECH,"react|reactjs|react.js"
-HOSP_REV_MGT,Revenue Management,Operations,HOSP,"revenue management|yield management|pricing strategy"
-HOSP_PMS,Property Management Systems,Technical,HOSP,"pms|property management system|opera|maestro"
-HOSP_FRONT_OFF,Front Office Operations,Operations,HOSP,"front office|guest services|reception operations"
-HOSP_FOOD_SAFE,Food Safety,Operations,HOSP,"food safety|servsafe|haccp|food handling"
-HEAL_PATIENT_CARE,Patient Care,Clinical,HEAL,"patient care|bedside care|nursing care"
-HEAL_EMR,Electronic Medical Records,Technical,HEAL,"emr|ehr|electronic health records|epic|cerner"
-HEAL_MED_CODE,Medical Coding,Operations,HEAL,"medical coding|icd-10|cpt|hcpcs"
-HEAL_NURSING,Nursing,Clinical,HEAL,"nursing|rn skills|clinical nursing"
-FIN_FIN_MODEL,Financial Modeling,Finance,FIN,"financial modeling|excel modeling|forecasting"
-FIN_RISK_ANAL,Risk Analysis,Finance,FIN,"risk analysis|risk assessment|risk management"
-FIN_AUDIT,Auditing,Finance,FIN,"auditing|audit|financial audit|internal audit"
-FIN_GAAP,GAAP,Finance,FIN,"gaap|generally accepted accounting principles|accounting standards"
-RETAIL_INV,Inventory Management,Operations,RETAIL,"inventory management|stock control|merchandising"
-RETAIL_POS,POS Systems,Technical,RETAIL,"pos|point of sale|retail systems"
-SOFT_COMM,Communication,Soft Skill,,"communication|verbal communication|written communication"
-SOFT_LEAD,Leadership,Soft Skill,,"leadership|team leadership|management"
-SOFT_PROB_SOLVE,Problem Solving,Soft Skill,,"problem solving|analytical thinking|critical thinking"
+TECH_PYTHON,Python,Technical,TECH,python|py|python3|python 3
+TECH_JAVA,Java,Technical,TECH,java|java se|java ee
+TECH_JS,JavaScript,Technical,TECH,javascript|js|node.js|nodejs|expressjs|express.js
+TECH_TS,TypeScript,Technical,TECH,typescript|ts
+TECH_GO,Go,Technical,TECH,go|golang
+TECH_RUST,Rust,Technical,TECH,rust|rustlang
+TECH_CPP,C++,Technical,TECH,c\+\+|cpp|c plus plus
+TECH_CSHARP,C#,Technical,TECH,c#|csharp|c-sharp
+TECH_SQL,SQL,Technical,TECH,sql|structured query language|tsql|plsql|mysql|postgresql|sqlite
+TECH_HTML_CSS,HTML/CSS,Technical,TECH,html|css|html5|css3
+TECH_AWS,AWS,Technical,TECH,aws|amazon web services|amazon cloud|s3|ec2|rds
+TECH_AZURE,Azure,Technical,TECH,azure|microsoft azure|active directory
+TECH_GCP,GCP,Technical,TECH,gcp|google cloud|google cloud platform|bigquery
+TECH_DOCKER,Docker,Technical,TECH,docker|containerization|containers
+TECH_K8S,Kubernetes,Technical,TECH,kubernetes|k8s|container orchestration
+TECH_TERRAFORM,Terraform,Technical,TECH,terraform|infrastructure as code|iac
+TECH_ANSIBLE,Ansible,Technical,TECH,ansible|configuration management
+TECH_JENKINS,Jenkins,Technical,TECH,jenkins|ci/cd|cicd|continuous integration
+TECH_GIT,Git,Technical,TECH,git|github|gitlab|version control
+TECH_REACT,React,Technical,TECH,react|reactjs|react.js
+TECH_ANGULAR,Angular,Technical,TECH,angular|angularjs|angular.js
+TECH_VUE,Vue,Technical,TECH,vue|vuejs|vue.js
+TECH_DJANGO,Django,Technical,TECH,django|django framework
+TECH_FLASK,Flask,Technical,TECH,flask|flask framework
+TECH_SPRING,Spring,Technical,TECH,spring|spring boot|spring framework
+TECH_LARAVEL,Laravel,Technical,TECH,laravel
+TECH_SPARK,Apache Spark,Technical,TECH,spark|apache spark|pyspark|spark sql
+TECH_KAFKA,Apache Kafka,Technical,TECH,kafka|apache kafka|event streaming
+TECH_AIRFLOW,Apache Airflow,Technical,TECH,airflow|apache airflow|dag
+TECH_DBT,dbt,Technical,TECH,dbt|data build tool
+TECH_PANDAS,Pandas,Technical,TECH,pandas
+TECH_NUMPY,NumPy,Technical,TECH,numpy
+TECH_SKLEARN,Scikit-learn,Technical,TECH,scikit-learn|sklearn
+TECH_TENSORFLOW,TensorFlow,Technical,TECH,tensorflow|tf
+TECH_PYTORCH,PyTorch,Technical,TECH,pytorch
+TECH_SNOWFLAKE,Snowflake,Technical,TECH,snowflake|snowflake db
+TECH_DATABRICKS,Databricks,Technical,TECH,databricks|lakehouse
+HEAL_PATIENT_CARE,Patient Care,Clinical,HEAL,patient care|bedside care|nursing care|patient comfort
+HEAL_EMR,Electronic Medical Records,Technical,HEAL,emr|ehr|electronic health records|epic|cerner|meditech
+HEAL_MED_CODE,Medical Coding,Operations,HEAL,medical coding|icd-10|cpt|hcpcs|medical billing
+HEAL_NURSING,Nursing,Clinical,HEAL,nursing|rn skills|clinical nursing|bedside nursing
+HEAL_HIPAA,HIPAA Compliance,Operations,HEAL,hipaa|hipaa compliance|patient privacy|medical privacy
+HEAL_CPR,CPR,Clinical,HEAL,cpr|cardiopulmonary resuscitation
+HEAL_BLS,Basic Life Support,Clinical,HEAL,bls|basic life support|bls certification
+HEAL_PATIENT_ASSESS,Patient Assessment,Clinical,HEAL,patient assessment|clinical assessment|nursing assessment
+HEAL_MED_ADMIN,Medication Administration,Clinical,HEAL,medication administration|med pass|administering medication
+HEAL_PHLEBOTOMY,Phlebotomy,Clinical,HEAL,phlebotomy|blood draw|venipuncture
+HEAL_WOUND_CARE,Wound Care,Clinical,HEAL,wound care|wound dressing|wound management
+HEAL_PATIENT_ED,Patient Education,Clinical,HEAL,patient education|discharge teaching
+HEAL_VITAL_SIGNS,Vital Signs,Clinical,HEAL,vital signs|vitals|blood pressure|temperature|heart rate
+HEAL_MED_TERM,Medical Terminology,Operations,HEAL,medical terminology|medical vocab
+HEAL_CLIN_COMP,Clinical Compliance,Operations,HEAL,clinical compliance|healthcare compliance|joint commission
+HOSP_REV_MGT,Revenue Management,Operations,HOSP,revenue management|yield management|pricing strategy
+HOSP_PMS,Property Management Systems,Technical,HOSP,pms|property management system|opera|maestro|amadeus
+HOSP_FRONT_OFF,Front Office Operations,Operations,HOSP,front office|guest services|reception operations|front desk
+HOSP_FOOD_SAFE,Food Safety,Operations,HOSP,food safety|servsafe|haccp|food handling|sanitation
+HOSP_GUEST_REL,Guest Relations,Operations,HOSP,guest relations|guest service|customer relations|hospitality
+HOSP_CONCIERGE,Concierge Services,Operations,HOSP,concierge|guest assistance|concierge services
+HOSP_EVENT_PLAN,Event Planning,Operations,HOSP,event planning|event management|banquet coordination
+HOSP_HOUSEKEEPING,Housekeeping Operations,Operations,HOSP,housekeeping|cleaning|laundry operations|room cleaning
+HOSP_CULINARY,Culinary Arts,Operations,HOSP,culinary arts|cooking|food prep|kitchen skills
+HOSP_MENU_ENG,Menu Engineering,Operations,HOSP,menu engineering|menu planning|recipe development
+HOSP_INV_CTRL,Inventory Control,Operations,HOSP,inventory control|food cost|beverage cost|stock management
+HOSP_BARTENDING,Bartending,Operations,HOSP,bartending|mixology|beverage service|bar operations
+HOSP_POS,POS Systems,Technical,HOSP,pos|point of sale|micros|toast|pos systems
+HOSP_KIT_MGT,Kitchen Management,Operations,HOSP,kitchen management|kitchen operations|back of house|boh
+RETAIL_INV,Inventory Management,Operations,RETAIL,inventory management|stock control|merchandising|stocking
+RETAIL_POS,POS Systems,Technical,RETAIL,pos|point of sale|retail systems|cash register
+RETAIL_MERCH,Visual Merchandising,Operations,RETAIL,merchandising|visual merchandising|product display
+RETAIL_LOSS_PREV,Loss Prevention,Operations,RETAIL,loss prevention|shrinkage control|security
+RETAIL_CUST_SERV,Customer Service,Operations,RETAIL,customer service|customer relations|client service
+RETAIL_CASH_HAND,Cash Handling,Operations,RETAIL,cash handling|cashiering|reconciliation
+RETAIL_STORE_OPS,Store Operations,Operations,RETAIL,store operations|shop management|retail operations
+RETAIL_SALES,Retail Sales,Operations,RETAIL,retail sales|sales associate|floor sales
+RETAIL_SHOPIFY,Shopify,Technical,RETAIL,shopify|e-commerce platform|online store
+RETAIL_Fulfillment,Order Fulfillment,Operations,RETAIL,order fulfillment|packing|shipping|fulfillment
+FIN_FIN_MODEL,Financial Modeling,Finance,FIN,financial modeling|excel modeling|forecasting|financial projection
+FIN_RISK_ANAL,Risk Analysis,Finance,FIN,risk analysis|risk assessment|risk management
+FIN_AUDIT,Auditing,Finance,FIN,auditing|audit|financial audit|internal audit
+FIN_GAAP,GAAP,Finance,FIN,gaap|generally accepted accounting principles|accounting standards
+FIN_IFRS,IFRS,Finance,FIN,ifrs|international financial reporting standards
+FIN_TAX_COMP,Tax Compliance,Finance,FIN,tax compliance|tax preparation|corporate tax|vat
+FIN_BOOKKEEPING,Bookkeeping,Finance,FIN,bookkeeping|ledger maintenance|quickbooks
+FIN_AP,Accounts Payable,Finance,FIN,ap|accounts payable|invoicing
+FIN_AR,Accounts Receivable,Finance,FIN,ar|accounts receivable|billing|collections
+FIN_FORECASTING,Financial Forecasting,Finance,FIN,financial forecasting|budgeting|financial planning & analysis|fp&a
+FIN_TREASURY,Treasury Management,Finance,FIN,treasury|cash management|liquidity management
+FIN_VALUATION,Valuation,Finance,FIN,valuation|business valuation|dcf|comparable analysis
+FIN_SOX,SOX Compliance,Finance,FIN,sox|sarbanes-oxley|internal controls
+MFG_PROD_SCHED,Production Scheduling,Operations,MFG,production scheduling|production planning|manufacturing schedule
+MFG_QA,Quality Assurance,Operations,MFG,qa|quality assurance|quality control|qc
+MFG_SIX_SIGMA,Six Sigma,Operations,MFG,six sigma|lean six sigma|dmaic|black belt|green belt
+MFG_LEAN,Lean Manufacturing,Operations,MFG,lean|lean manufacturing|5s|kaizen|continuous improvement
+MFG_CAD,CAD,Technical,MFG,cad|computer-aided design|solidworks|autocad
+MFG_PLC,PLC Programming,Technical,MFG,plc|plc programming|allen bradley|siemens plc
+MFG_CNC,CNC Machining,Technical,MFG,cnc|cnc machining|cnc programming|lathe|mill
+MFG_SCADA,SCADA,Technical,MFG,scada|hmi|supervisory control and data acquisition
+MFG_SUPPLY_CHAIN,Supply Chain,Operations,MFG,supply chain|logistics|procurement|sourcing
+MFG_PREV_MAINT,Preventive Maintenance,Operations,MFG,preventive maintenance|pm|machine maintenance
+MFG_OSHA,OSHA Compliance,Operations,MFG,osha|osha compliance|safety standards|industrial safety
+MFG_ISO9001,ISO 9001,Operations,MFG,iso 9001|iso standards|quality management system|qms
+EDU_CURRICULUM,Curriculum Development,Teaching,EDU,curriculum development|curriculum design|lesson development
+EDU_LESSON_PLAN,Lesson Planning,Teaching,EDU,lesson planning|lesson design|instructional planning
+EDU_CLASS_MGT,Classroom Management,Teaching,EDU,classroom management|classroom discipline
+EDU_DIFF_INSTR,Differentiated Instruction,Teaching,EDU,differentiated instruction|personalized learning
+EDU_SPECIAL_ED,Special Education,Teaching,EDU,special education|sped|iep|individualized education program
+EDU_ED_TECH,Educational Technology,Teaching,EDU,educational technology|edtech|smartboards
+EDU_STUDENT_ASSESS,Student Assessment,Teaching,EDU,student assessment|grading|formative assessment|summative assessment
+EDU_LMS,E-learning LMS,Technical,EDU,lms|learning management system|canvas|moodle|blackboard
+EDU_ADVISING,Student Advising,Teaching,EDU,student advising|academic advising|student mentorship
+EDU_LECTURE,Lecture Delivery,Teaching,EDU,lecture delivery|teaching|classroom instruction
+GOV_PUBLIC_POLICY,Public Policy,Administration,GOV,public policy|policy development|public administration
+GOV_GRANT_WRITING,Grant Writing,Administration,GOV,grant writing|grant proposals|grant administration
+GOV_PROCUREMENT,Government Procurement,Administration,GOV,procurement|government contracting|public purchasing
+GOV_CONTRACT_MGT,Contract Management,Administration,GOV,contract management|contract administration
+GOV_PUBLIC_REL,Public Relations,Administration,GOV,public relations|pr|media relations|public communication
+GOV_REG_COMP,Regulatory Compliance,Administration,GOV,regulatory compliance|government regulations|compliance oversight
+GOV_POLICY_ANAL,Policy Analysis,Administration,GOV,policy analysis|policy evaluation|policy research
+GOV_CIVIC_ENG,Civic Engagement,Administration,GOV,civic engagement|community outreach|public participation
+SOFT_COMM,Communication,Soft Skill,,communication|verbal communication|written communication|presentation skills
+SOFT_LEAD,Leadership,Soft Skill,,leadership|team leadership|management|people management
+SOFT_PROB_SOLVE,Problem Solving,Soft Skill,,problem solving|analytical thinking|critical thinking|troubleshooting
+SOFT_TEAMWORK,Teamwork,Soft Skill,,teamwork|collaboration|cooperation|team player
+SOFT_TIME_MGT,Time Management,Soft Skill,,time management|prioritization|organization|scheduling
+SOFT_CONFLICT_RES,Conflict Resolution,Soft Skill,,conflict resolution|mediation|conflict management
+SOFT_ADAPT,Adaptability,Soft Skill,,adaptability|flexibility|resilience|learning agility
+SOFT_CRIT_THINK,Critical Thinking,Soft Skill,,critical thinking|analytical reasoning|decision making
+SOFT_EQ,Emotional Intelligence,Soft Skill,,emotional intelligence|eq|empathy|self-awareness
+SOFT_NEGOTIATION,Negotiation,Soft Skill,,negotiation|persuasion|bargaining
+SOFT_PROJECT_MGT,Project Management,Soft Skill,,project management|pm|pmp|project coordination
+SOFT_AGILE_SCRUM,Agile/Scrum,Soft Skill,,agile|scrum|kanban|sprint planning|daily standup
