@@ -80,7 +80,9 @@ class LMIPBootstrapper:
         # Silver layer
         "silver_silver_jobs_staging.sql",
         "silver_silver_jobs_current.sql",
-        "silver_silver_jobs_history.sql",
+        "silver_silver_job_changes.sql",
+        "silver_silver_job_identity_map.sql",
+        "silver_silver_semantic_review_queue.sql",
         "silver_silver_skill_mapping.sql",
         
         # Intermediate layer

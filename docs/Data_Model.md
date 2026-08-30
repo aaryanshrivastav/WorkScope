@@ -31,7 +31,7 @@ The LMIP data model implements a **multi-layered medallion architecture** with i
 * `metadata.taxonomy_role_canonical` - Canonical role definitions (22 roles)
 * `metadata.taxonomy_skill_catalog` - Master skill catalog (26 skills)
 
-> **⚠️ Schema Contract Status**: Formal schema contracts for the four taxonomy tables (taxonomy_sectors, taxonomy_role_families, taxonomy_role_canonical, taxonomy_skill_catalog) are pending documentation. Current implementations are based on CSV file structures and DDL definitions. For interim schema documentation, see [changelog/2026-06-17-taxonomy-tables-migration.md](changelog/2026-06-17-taxonomy-tables-migration.md).
+> **Schema Contract Status**: All 56 schema contracts across 9 schemas are complete and active in `contracts/<layer>/`.
 
 ### Bronze Layer
 * `bronze.bronze_job_snapshot` - Raw API responses (immutable)
@@ -47,18 +47,21 @@ The LMIP data model implements a **multi-layered medallion architecture** with i
 * `intermediate.inter_company_canonical` - Company master
 * `intermediate.inter_skill_catalog` - Master skill taxonomy
 
-### Gold Layer
-* **Dimensions (10)**: dim_date, dim_source, dim_sector, dim_skill, dim_role, dim_location, dim_company, dim_company_alias, dim_job_scd2
+### Gold Layer (Kimball Star Schema)
+* **Dimensions (9)**: dim_date, dim_source, dim_sector, dim_skill, dim_role, dim_location, dim_company, dim_company_alias, dim_job
 * **Facts (4)**: fact_job_postings, fact_job_lifecycle, fact_salary, fact_pipeline_runs
 * **Bridges (1)**: bridge_job_skill
 
-### Gold Layer
-* `gold.gold_salary_trends` - Salary benchmarks with percentiles
-* `gold.gold_skill_demand` - Skill trending and co-occurrence
-* `gold.gold_hiring_trends` - Job posting velocity
-* `gold.gold_company_hiring` - Company-specific hiring activity
-* `gold.gold_location_trends` - Geographic patterns
-* `gold.gold_sector_overview` - Sector KPIs
+### Reporting Layer (Analytical BI Marts)
+* `reporting.reporting_salary_trends` - Salary benchmarks with percentiles
+* `reporting.reporting_skill_demand` - Skill trending and co-occurrence
+* `reporting.reporting_hiring_trends` - Job posting velocity
+* `reporting.reporting_company_hiring` - Company-specific hiring activity
+* `reporting.reporting_location_trends` - Geographic patterns
+* `reporting.reporting_sector_overview` - Sector KPIs
+* `reporting.reporting_company_activity` - Company activity metrics
+* `reporting.reporting_pipeline_health` - Pipeline telemetry & DQ health
+* `reporting.role_review_queue` - Taxonomy review queue
 
 For detailed schema definitions, column descriptions, and data contracts, refer to:
 * Contract files: `/LMIP/contracts/<layer>/<table>.yaml`

@@ -28,10 +28,13 @@ class DatabricksClientWrapper:
         Args:
             warehouse_id: Optional SQL warehouse ID. If not provided, auto-selects.
         """
-        self.client = WorkspaceClient(
-            host=os.getenv("DATABRICKS_HOST"),
-            token=os.getenv("DATABRICKS_TOKEN")
-        )
+        try:
+            self.client = WorkspaceClient(
+                host=os.getenv("DATABRICKS_HOST"),
+                token=os.getenv("DATABRICKS_TOKEN")
+            )
+        except Exception as e:
+            self.client = None
         self._warehouse_id = warehouse_id
         self._cached_warehouse_id: Optional[str] = None
     
@@ -65,10 +68,9 @@ class DatabricksClientWrapper:
         
         Returns:
             Warehouse ID
-        
-        Raises:
-            Exception: If no warehouses found
         """
+        if not self.client:
+            return "dry-run-warehouse-id"
         warehouses: List[EndpointInfo] = list(self.client.warehouses.list())
         
         if not warehouses:

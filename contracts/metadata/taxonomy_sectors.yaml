@@ -1,0 +1,56 @@
+table_name: workspace.metadata.taxonomy_sectors
+layer: metadata
+description: Master sector taxonomy with hierarchical structure and NAICS code mapping
+primary_key:
+  - sector_key
+business_keys:
+  - sector_key
+columns:
+  - name: sector_key
+    type: STRING
+    nullable: false
+    description: Unique sector identifier (e.g., TECH, HOSP, HEAL)
+  - name: sector_name
+    type: STRING
+    nullable: false
+    description: Display name for the sector
+  - name: parent_sector
+    type: STRING
+    nullable: true
+    description: Parent sector key for hierarchical rollup (NULL for top-level)
+  - name: naics_code
+    type: STRING
+    nullable: true
+    description: NAICS industry classification code
+  - name: keywords
+    type: STRING
+    nullable: true
+    description: Pipe-delimited keywords for sector classification matching
+  - name: created_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record creation timestamp
+  - name: updated_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record last update timestamp
+partitioning: null
+quality_rules:
+  - rule: not_null
+    columns:
+      - sector_key
+      - sector_name
+      - created_at
+      - updated_at
+  - rule: unique
+    columns:
+      - sector_key
+lineage_inputs:
+  - metadata/sectors.csv
+lineage_outputs:
+  - workspace.intermediate.inter_sector_map
+  - workspace.gold.dim_sector
+generated_date: '2026-06-20'
+contract_version: '1.0'
+status: active
+

@@ -1,0 +1,53 @@
+table_name: workspace.metadata.taxonomy_role_families
+layer: metadata
+description: Role family taxonomy providing intermediate grouping between sectors and canonical roles
+primary_key:
+  - family_key
+business_keys:
+  - family_key
+columns:
+  - name: family_key
+    type: STRING
+    nullable: false
+    description: Unique role family identifier (e.g., ENG, DATA, HOSP_OPS)
+  - name: family_name
+    type: STRING
+    nullable: false
+    description: Display name for the role family
+  - name: sector_key
+    type: STRING
+    nullable: false
+    description: Parent sector key (FK to taxonomy_sectors)
+  - name: description
+    type: STRING
+    nullable: true
+    description: Role family description and scope
+  - name: created_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record creation timestamp
+  - name: updated_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record last update timestamp
+partitioning: null
+quality_rules:
+  - rule: not_null
+    columns:
+      - family_key
+      - family_name
+      - sector_key
+      - created_at
+      - updated_at
+  - rule: unique
+    columns:
+      - family_key
+lineage_inputs:
+  - metadata/role_families.csv
+lineage_outputs:
+  - workspace.metadata.taxonomy_role_canonical
+  - workspace.gold.dim_role
+generated_date: '2026-06-20'
+contract_version: '1.0'
+status: active
+

@@ -1,0 +1,57 @@
+table_name: workspace.metadata.taxonomy_skill_catalog
+layer: metadata
+description: Master skill taxonomy for skill extraction and canonicalization
+primary_key:
+  - skill_key
+business_keys:
+  - skill_key
+columns:
+  - name: skill_key
+    type: STRING
+    nullable: false
+    description: Unique skill identifier (e.g., TECH_PYTHON, HOSP_REV_MGT)
+  - name: canonical_skill
+    type: STRING
+    nullable: false
+    description: Standard skill name (e.g., Python, Revenue Management)
+  - name: skill_category
+    type: STRING
+    nullable: false
+    description: Skill category (Technical, Operations, Clinical, Finance, Soft Skill)
+  - name: sector_key
+    type: STRING
+    nullable: true
+    description: Primary sector key (NULL for cross-sector soft skills)
+  - name: aliases
+    type: STRING
+    nullable: true
+    description: Pipe-delimited skill aliases for fuzzy matching
+  - name: created_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record creation timestamp
+  - name: updated_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record last update timestamp
+partitioning: null
+quality_rules:
+  - rule: not_null
+    columns:
+      - skill_key
+      - canonical_skill
+      - skill_category
+      - created_at
+      - updated_at
+  - rule: unique
+    columns:
+      - skill_key
+lineage_inputs:
+  - metadata/canonical_skills.csv
+lineage_outputs:
+  - workspace.intermediate.inter_skill_catalog
+  - workspace.gold.dim_skill
+generated_date: '2026-06-20'
+contract_version: '1.0'
+status: active
+

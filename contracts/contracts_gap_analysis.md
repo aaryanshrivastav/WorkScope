@@ -52,19 +52,13 @@ This report documents the current state of LMIP (Labor Market Intelligence Platf
 
 ### Metadata Schema
 **Tables**: 7  
-**Contracts**: 3 (missing 4 taxonomy contracts)
-
-**Missing**:
-* `taxonomy_sectors.yaml`
-* `taxonomy_role_families.yaml`
-* `taxonomy_role_canonical.yaml`
-* `taxonomy_skill_catalog.yaml`
+**Contracts**: 7 ✅
+* `taxonomy_sectors.yaml` ✅
+* `taxonomy_role_families.yaml` ✅
+* `taxonomy_role_canonical.yaml` ✅
+* `taxonomy_skill_catalog.yaml` ✅
 
 ### Bronze Schema
-**Tables**: 3  
-**Contracts**: 3 ✅
-
-### Silver Schema
 **Tables**: 6  
 **Contracts**: 6 ✅
 

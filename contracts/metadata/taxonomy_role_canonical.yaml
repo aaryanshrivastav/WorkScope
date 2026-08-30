@@ -1,0 +1,62 @@
+table_name: workspace.metadata.taxonomy_role_canonical
+layer: metadata
+description: Master canonical role taxonomy for job title normalization and mapping
+primary_key:
+  - role_key
+business_keys:
+  - role_key
+columns:
+  - name: role_key
+    type: STRING
+    nullable: false
+    description: Unique canonical role identifier (e.g., ENG_SWE, DATA_DS)
+  - name: canonical_role
+    type: STRING
+    nullable: false
+    description: Standard role name (e.g., Software Engineer, Data Scientist)
+  - name: family_key
+    type: STRING
+    nullable: false
+    description: Parent role family key (FK to taxonomy_role_families)
+  - name: sector_key
+    type: STRING
+    nullable: false
+    description: Parent sector key (FK to taxonomy_sectors)
+  - name: seniority
+    type: STRING
+    nullable: true
+    description: Seniority level (junior, mid, senior, executive)
+  - name: aliases
+    type: STRING
+    nullable: true
+    description: Pipe-delimited role aliases for fuzzy matching
+  - name: created_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record creation timestamp
+  - name: updated_at
+    type: TIMESTAMP
+    nullable: false
+    description: Record last update timestamp
+partitioning: null
+quality_rules:
+  - rule: not_null
+    columns:
+      - role_key
+      - canonical_role
+      - family_key
+      - sector_key
+      - created_at
+      - updated_at
+  - rule: unique
+    columns:
+      - role_key
+lineage_inputs:
+  - metadata/canonical_roles.csv
+lineage_outputs:
+  - workspace.intermediate.inter_job_role_map
+  - workspace.gold.dim_role
+generated_date: '2026-06-20'
+contract_version: '1.0'
+status: active
+

@@ -19,26 +19,28 @@ from databricks.sdk.service.jobs import RunLifeCycleState, RunResultState
 load_dotenv()
 
 
-WORKFLOW_DIR = "/Workspace/Users/aaryan.shrivastav1403@gmail.com/LMIP/workflows"
+PROJECT_ROOT = Path(__file__).parents[2]
+WORKFLOW_DIR = PROJECT_ROOT / "workflows"
 WORKFLOWS = {
-    "init": f"{WORKFLOW_DIR}/init.json",
-    "ingestion": f"{WORKFLOW_DIR}/LMIPDataIngestion.json",
-    "silver": f"{WORKFLOW_DIR}/LMIPSilverProcessing.json",
-    "intermediate": f"{WORKFLOW_DIR}/LMIPIntermediateProcessing.json",
-    "warehouse": f"{WORKFLOW_DIR}/LMIPWarehouseBuild.json",
-    "gold": f"{WORKFLOW_DIR}/LMIPGoldBuild.json",
-    "publishing": f"{WORKFLOW_DIR}/publishing.json",
-    "recovery": f"{WORKFLOW_DIR}/recovery.json",
+    "init": WORKFLOW_DIR / "init.json",
+    "ingestion": WORKFLOW_DIR / "LMIPDataIngestion.json",
+    "silver": WORKFLOW_DIR / "LMIPSilverProcessing.json",
+    "intermediate": WORKFLOW_DIR / "LMIPIntermediateProcessing.json",
+    "warehouse": WORKFLOW_DIR / "LMIPWarehouseBuild.json",
+    "gold": WORKFLOW_DIR / "LMIPGoldBuild.json",
+    "publishing": WORKFLOW_DIR / "publishing.json",
+    "recovery": WORKFLOW_DIR / "recovery.json",
 }
 
 
 @pytest.fixture(scope="module")
 def workspace_client():
     """Get Databricks workspace client."""
-    return WorkspaceClient(
-        host=os.getenv("DATABRICKS_HOST"),
-        token=os.getenv("DATABRICKS_TOKEN")
-    )
+    host = os.getenv("DATABRICKS_HOST")
+    token = os.getenv("DATABRICKS_TOKEN")
+    if not host or not token:
+        pytest.skip("Databricks host and token not configured in environment")
+    return WorkspaceClient(host=host, token=token)
 
 
 @pytest.fixture(scope="module")
@@ -46,8 +48,9 @@ def workflow_configs():
     """Load all workflow JSON configurations."""
     configs = {}
     for name, path in WORKFLOWS.items():
-        with open(path.replace("/Workspace", ""), "r") as f:
-            configs[name] = json.load(f)
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                configs[name] = json.load(f)
     return configs
 
 
@@ -57,8 +60,7 @@ class TestWorkflowConfiguration:
     def test_all_workflow_files_exist(self):
         """Verify all workflow JSON files exist."""
         for name, path in WORKFLOWS.items():
-            local_path = path.replace("/Workspace", "")
-            assert os.path.exists(local_path), f"Workflow {name} not found at {local_path}"
+            assert os.path.exists(path), f"Workflow {name} not found at {path}"
 
     def test_workflow_json_is_valid(self, workflow_configs):
         """Verify all workflow JSONs are valid."""
@@ -131,8 +133,8 @@ class TestInitWorkflow:
         tasks = {t["task_key"]: t for t in init_config["tasks"]}
         
         # Expected order: validate_env -> create_schemas -> seed_metadata
-        assert "Init_ValidateEnv" in tasks or "init_validate_env" in tasks
-        assert "Init_CreateSchemas" in tasks or "init_create_schemas" in tasks
+        assert any(k in tasks for k in ["Init_ValidateEnv", "init_validate_env", "Init_Validate_Environment"])
+        assert any(k in tasks for k in ["Init_CreateSchemas", "init_create_schemas", "Init_Create_Schemas"])
 
 
 class TestIngestionWorkflow:
